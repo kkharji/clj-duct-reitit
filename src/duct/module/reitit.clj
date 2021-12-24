@@ -1,79 +1,83 @@
 (ns duct.module.reitit
-  (:require [integrant.core :refer [init-key]]
+  (:require [integrant.core :refer [init-key] :as ig]
             [duct.core :as duct]
-            [integrant.core :as ig]
-            [clojure.walk :as walk]
             [clojure.string :as str]))
 
-(defn- try-to-resolve
-  "Return a keyword, if str is valid integrant init-key or the value if str is valid symbol."
-  [str]
-  (cond (get-method ig/init-key (keyword str))
+(defn- qualify-key [key ns]
+  (if (str/includes? (str key) "/")
+    (str ns "." (namespace key) "/" (name key))
+    (str ns "/" (name key))))
+
+(defn- try-resolve [str]
+  (cond (get-method init-key (keyword str))
         (keyword str)
         (resolve (symbol str))
-        (-> str symbol resolve var-get)
-        :else nil))
-
-(defn- key->qualified [key acc ns]
-  (conj acc (if (str/includes? (str key) "/")
-              (str ns "." (namespace key) "/" (name key))
-              (str ns "/" (name key)))))
+        (var-get (resolve (symbol str)))))
 
 (defn- resolve-key
   "if key is valid integrant keyword, then return it,
-   else key is a symbol or result to a symbol, then return it's value."
+   elseif the key result to a symbol, return it's value."
   {:test #(let [namespaces ['foo.handler 'foo.middleware]
-                resolve (fn [k] (resolve-key k namespaces))]
-            (assert (keyword? (resolve :ping)))
-            (assert (keyword? (resolve :plus/with-body)))
-            (assert (map? (resolve 'plus/with-query)))
-            (assert (nil? (resolve :plus/with-email))))}
+                resolve-key (fn [k] (resolve-key k namespaces))]
+            (-> :ping resolve-key keyword? assert)
+            (-> :plus/with-body resolve-key keyword? assert)
+            (-> 'plus/with-query resolve-key map? assert)
+            (-> :plus/with-email resolve-key nil? assert))}
   [key namespaces]
-  (let [res (->> namespaces
-                 (reduce (partial key->qualified key) [])
-                 (mapv try-to-resolve)
-                 (remove nil?))]
-    (if (< 1 (count res))
+  (let [qualify #(conj %1 (qualify-key key %2))
+        result (->> (reduce qualify [] namespaces)
+                    (mapv try-resolve)
+                    (remove nil?))]
+    (if (second result)
       (throw
-       (-> "duct.module.reitit: found conflicting keyword/symbol names: "
-           (str (pr-str res))
-           (ex-info {:data res})))
-      (first res))))
+       (-> "duct.reitit: Found conflict detected: "
+           (str (pr-str result))
+           (ex-info {:data result})))
+      (first result))))
 
-(defn resolve-registry
+(defn- resolve-registry
   "Given a registry"
-  {:test #(let [reg [[:index {:path (ig/ref :index-path)}]
-                     [:ping {:message "pong"}]
-                     [:plus/with-body]]]
-            (assert (= (resolve-registry reg ['foo.handler 'foo.middleware])
-                       {:index [:foo.handler/index {:path (ig/ref :index-path)}]
-                        :ping  [:foo.handler/ping {:message "pong"}]
-                        :plus/with-body [:foo.handler.plus/with-body {}]})))}
-  [registry namespaces]
-  (reduce
-   (fn [acc [k v]]
-     (when-let [res (resolve-key k namespaces)]
-       (assoc acc k [res (or v {})])))
-   {}
-   registry))
+  {:test #(-> [[:index {:path (ig/ref :index-path)}]
+               [:ping {:message "pong"}]
+               [:plus/with-body]]
+              (resolve-registry '{:duct.core/project-ns foo
+                                  :duct.core/handler-ns handler
+                                  :duct.core/middleware-ns middleware})
+              (= {:index [:foo.handler/index {:path (ig/ref :index-path)}]
+                  :plus/with-body [:foo.handler.plus/with-body {}]
+                  :ping  [:foo.handler/ping {:message "pong"}]})
+              (assert))}
+  [registry config]
+  (let [{:duct.core/keys [project-ns middleware-ns handler-ns]} config
+        to-path    (fn [ns] (str project-ns "." ns))
+        namespaces (mapv to-path [middleware-ns handler-ns])
+        collect    (fn [f] (reduce f {} registry))]
+    (collect
+     (fn [acc [k v]]
+       (when-let [res (resolve-key k namespaces)]
+         (assoc acc k [res (or v {})]))))))
 
 (comment
-  (->> [#'resolve-key
-        #'resolve-registry]
-       (mapv test)))
+  (test #'resolve-key)
+  (test #'resolve-registry))
+
+(def ^:private default-config
+  {:duct.core/handler-ns 'handler-ns
+   :duct.core/middleware-ns 'middleware-ns})
+
+(defn- merge-with-defaults [config]
+  (merge default-config config))
+
+(defn- to-map [registry]
+  (-> #(assoc %1 (first %3) (second %3))
+      (reduce-kv {} registry)))
 
 (defmethod init-key :duct.module/reitit [_ {:keys [routes registry]}]
-  (fn [{:duct.core/keys [project-ns handler-ns middleware-ns]
-        :duct.module.reitit/keys [cors opts]
-        :as config}]
-    (let [namespaces [(or handler-ns 'handler)
-                      (or middleware-ns 'middleware)]
-          registry   (->> namespaces
-                          (mapv #(str project-ns "." %))
-                          (resolve-registry registry))
-          rconfigs   (reduce-kv #(assoc %1 (first %3) (second %3)) {} registry)
-          rkeys      (keys rconfigs)
-          additions  (-> rconfigs
-                         (assoc :duct.router/reitit
-                                {:routes routes :registry registry}))]
-      (duct/merge-configs config additions))))
+  (fn [{:duct.module.reitit/keys [cors opts] :as config}]
+    (let [config   (merge-with-defaults config)
+          registry (resolve-registry registry config)
+          extra    (to-map registry)
+          router   {:routes routes :registry registry :opts opts}
+          update   (-> extra
+                       (assoc :duct.router/reitit router))]
+      (duct/merge-configs config update))))
