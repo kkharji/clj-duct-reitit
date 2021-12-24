@@ -26,8 +26,8 @@ Full configuration demo:
               ["/plus" {:get plus/with-query
                         :post :plus/with-body}]]
    :registry [[:index {:path #ig/ref index-path}]
-              [:pong {:message "pong"}]
-              [:plus/with-query]}}
+              [:ping {:message "pong"}]
+              [:plus/with-body]}}
 
   :duct.profile/base
   {:duct.core/project-ns foo
@@ -41,7 +41,7 @@ Full configuration demo:
    {:origin [#".*"]
     :methods [:get :post :delete :options]}
 
-   :duct.module.reitit/options
+   :duct.module.reitit/opts
    {:coercion :data-spec ; default nil
     :environment {:db #ig/ref :foo/database} ; default nil
     :middlewares []}} }
@@ -60,7 +60,7 @@ Full configuration demo:
 cross-origin resource sharing settings, In development, the origin will always
 be a wildcard as the example above. valid keys: `:headers, :origin, :methods`
 
-#### `:duct.module.reitit/options`
+#### `:duct.module.reitit/opts`
 
 Extra reitit and ring options
   - `:coercion`: if this value is nil then coercion won't be used. valid keys `[:data-spec :clojure-spec :schema]`
