@@ -1,7 +1,10 @@
 (ns duct.module.reitit-test
-  (:require [clojure.test :refer [deftest testing is]]
+  (:require [clojure.test :refer [deftest testing is are]]
             [duct.module.reitit]
-            [duct.core :as core]))
+            [foo.handler]
+            [foo.handler.plus]
+            [duct.core :as core]
+            [integrant.core :as ig]))
 
 (core/load-hierarchy)
 
@@ -35,5 +38,10 @@
       :middlewares []}}})
 
 (deftest module-test
-  (testing "should read without errors"
-    (is (core/build-config basic-config))))
+  (let [config (core/build-config basic-config)]
+    (testing "should read without errors"
+      (is (map? config)))
+    (testing "should merge registry's integrant keys"
+      (are [x] (not= nil (x config))
+        :foo.handler/ping
+        :foo.handler.plus/with-body))))
