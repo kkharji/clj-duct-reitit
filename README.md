@@ -42,9 +42,9 @@ Full configuration demo:
     :methods [:get :post :delete :options]}
 
    :duct.module.reitit/opts
-   {:coercion :data-spec ; default nil
+   {:coercion data-spec ; default nil
     :environment {:db #ig/ref :foo/database} ; default nil
-    :middlewares []}} }
+    :middlewares []}}} ; default empty
 ```
 
 ### Keys

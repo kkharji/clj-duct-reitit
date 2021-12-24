@@ -7,11 +7,12 @@
                  [ring-logger         "1.0.1"]
                  [metosin/reitit      "0.5.15"]
                  [duct/core           "0.7.0"]
+                 [duct/logger.timbre  "0.5.0"]
                  [integrant           "0.7.0"]
                  [medley              "1.0.0"]]
-  :plugins [[cider/cider-nrepl      "0.27.3"]]
   :profiles {:repl
              {:source-paths   ["dev/src"]
               :resource-paths ["dev/resources"]
               :dependencies [[clj-http/clj-http "3.12.3"]
-                             [ring/ring-mock    "0.4.0"]]}})
+                             [ring/ring-mock    "0.4.0"]]}}
+  :plugins [[cider/cider-nrepl      "0.27.3"]])

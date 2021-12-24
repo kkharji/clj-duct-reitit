@@ -32,8 +32,8 @@
      {:origin [#".*"]
       :methods [:get :post :delete :options]}
 
-     :duct.module.reitit/options
-     {:coercion :data-spec ; default nil
+     :duct.module.reitit/opts
+     {:coercion data-spec ; default nil
       :environment {:db (ig/ref :foo/database)} ; default nil
       :middlewares []}}})
 

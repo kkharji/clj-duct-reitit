@@ -68,16 +68,30 @@
 (defn- merge-with-defaults [config]
   (merge default-config config))
 
-(defn- to-map [registry]
-  (-> #(assoc %1 (first %3) (second %3))
-      (reduce-kv {} registry)))
+(defn- registry->duct-config [registry]
+  (reduce-kv
+   (fn [m _ v]
+     (assoc m (first v) (second v)))
+   {}
+   registry))
+
+(defn- registry->duct-registry [registry]
+  (reduce-kv
+   (fn [m k v]
+     (assoc m k (ig/ref (first v))))
+   {}
+   registry))
 
 (defmethod init-key :duct.module/reitit [_ {:keys [routes registry]}]
-  (fn [{:duct.module.reitit/keys [cors opts] :as config}]
+  (fn [config]
     (let [config   (merge-with-defaults config)
           registry (resolve-registry registry config)
-          extra    (to-map registry)
-          router   {:routes routes :registry registry :opts opts}
-          update   (-> extra
-                       (assoc :duct.router/reitit router))]
-      (duct/merge-configs config update))))
+          extra    (registry->duct-config registry)
+          merge    #(duct/merge-configs config (merge extra %))
+          router   {:routes routes
+                    :cors (ig/ref ::cors)
+                    :registry (ig/ref ::registry)
+                    :opts (ig/ref ::opts)}]
+      (merge
+       {::registry (registry->duct-registry registry)
+        :duct.router/reitit router}))))
