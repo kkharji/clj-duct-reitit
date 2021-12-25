@@ -5,7 +5,7 @@
 (defmethod init-key ::index [_ {:keys [path]}]
   (constantly
    {:status 200
-    :body (->> path io/resource slurp)}))
+    :body (some->> path io/resource slurp)}))
 
 (defmethod init-key ::ping [_ {:keys [message]}]
   (constantly

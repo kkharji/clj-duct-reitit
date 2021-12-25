@@ -26,7 +26,7 @@
      :duct.core/middleware-ns middleware ; default value
 
      :foo/database {}
-     :foo/index-path "resources/test-index.html"
+     :foo/index-path "resources/index.html"
 
      :duct.module.reitit/cors ;; defaults in for dev and local environment
      {:origin [#".*"]
