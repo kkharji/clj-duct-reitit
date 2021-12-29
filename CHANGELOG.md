@@ -1,6 +1,10 @@
-# 🔥 [Unreleased](https://github.com/tami5/clj-duct-reitit)
+# 🎉 [0.0.1](https://github.com/tami5/clj-duct-reitit/tree/0.0.1) - 2021-12-29
 
 ## <!-- 0 -->✨ Features
+
+
+
+- changelog <b><a href="https://github.com/tami5/clj-duct-reitit/commit/fee896e1c81cb9b9a96d53be5648f883cb24a1e9">auto-generator</a></b>
 
 
 
