@@ -14,5 +14,6 @@
              {:source-paths   ["dev/src"]
               :resource-paths ["dev/resources"]
               :dependencies [[clj-http/clj-http "3.12.3"]
-                             [ring/ring-mock    "0.4.0"]]}}
+                             [ring/ring-mock    "0.4.0"]
+                             [tami5/clj-dev     "0.1.1"]]}}
   :plugins [[cider/cider-nrepl      "0.27.3"]])
