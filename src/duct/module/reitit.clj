@@ -47,20 +47,20 @@
        (vals)
        (util/get-namespaces (config :duct.core/project-ns))))
 
-(defmethod init-key :duct.module/reitit [_ {:keys [routes registry]}]
-  (fn [config]
+(defmethod init-key :duct.module/reitit [_ _]
+  (fn [{::keys [registry routes opts cors] :as config}]
     (let [config     (merge-with-defaults config)
           namespaces (get-namespaces config)
           registry   (resolve-registry namespaces registry)
-          extras {:duct.router/reitit
-                  {:routes routes
-                   :cors (ig/ref ::cors)
-                   :registry (ig/ref ::registry)
-                   :opts (ig/ref ::opts)}
-                  ::registry (registry->key registry)}]
-      (->> (registry->config registry)
-           (merge extras)
-           (duct/merge-configs config)))))
+          extras     {:duct.router/reitit {:routes routes
+                                           :registry (registry->key registry)
+                                           :opts opts
+                                           :cors cors}}
+                      ;; :duct.handler/root  {:router (ig/ref :duct.router/reitit)}}
+          config (->> (registry->config registry)
+                      (merge extras)
+                      (duct/merge-configs config))]
+      (dissoc config ::opts ::registry ::routes ::cors))))
 
 (comment
   (test #'resolve-registry))

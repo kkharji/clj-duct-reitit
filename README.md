@@ -20,56 +20,61 @@ To add this module to your configuration, add the `:duct.module/reitit` key.
 
 Full configuration demo:
 ```edn
-{:duct.module/reitit
-  {:routes   [["/" :index]
-              ["/ping" {:get {:handler :pong}}]
-              ["/plus" {:get plus/with-query
-                        :post :plus/with-body}]]
-   :registry [[:index {:path #ig/ref index-path}]
-              [:ping {:message "pong"}]
-              [:plus/with-body]}}
+{:duct.module/reitit {}
+ :duct.profile/base
+ {:duct.core/project-ns foo
+  :duct.core/handler-ns handler ; default value
+  :duct.core/middleware-ns middleware ; default value
 
-  :duct.profile/base
-  {:duct.core/project-ns foo
-   :duct.core/handler-ns handler ; default value
-   :duct.core/middleware-ns middleware ; default value
+  :foo/database {}
+  :foo/index-path "resources/index.html"
 
-   :foo/database {}
-   :foo/index-path "public/index.html"
+  :duct.module.reitit/routes
+  [["/" :index]
+   ["/ping" {:get {:handler :pong}}]
+   ["/plus" {:get plus/with-query ;; > function: project-ns.handler-ns.plus/with-body
+             :post :plus/with-body}]]
 
-   :duct.module.reitit/cors ;; defaults in for dev and local environment
-   {:origin [#".*"]
-    :methods [:get :post :delete :options]}
+  :duct.module.reitit/registry
+  {:index {:path #ig/ref :index-path}
+   :ping  {:message "pong"}
+   :plus/with-body {}
 
-   :duct.module.reitit/opts
-   {:coercion data-spec ; default nil
-    :environment {:db #ig/ref :foo/database} ; default nil
-    :middlewares []}}} ; default empty
+  :duct.module.reitit/opts
+  {:coercor 'spec ; default nil
+   :environment {:db #ig/ref :foo/database} ; default nil
+   :middlewares []
+   :cors {:origin [#".*"] ;; defaults in for dev and local environment
+          :methods [:get :post :delete :options]}}}}
 ```
-
 ### Keys
 
-#### `:duct.module/reitit`
-- `routes` See the [reitit syntax][] for more information.
-- `registry`: map of handler and middleware keys and their integrant initialization arguments.
+#### `:duct.module.reitit/routes`
+
+See the [reitit syntax][] for more information. Keywords within the routes are
+replaced later with matching registry key or a valid symbol. like with
+`plus/with-query` function symbol.
 
 [reitit syntax]: https://cljdoc.org/d/metosin/reitit/0.5.5/doc/basics/route-syntax
 
-#### `:duct.module.reitit/cors`
+#### `:duct.module.reitit/registry`
 
-cross-origin resource sharing settings, In development, the origin will always
-be a wildcard as the example above. valid keys: `:headers, :origin, :methods`
+A map of handler and middleware keys and their integrant initialization
+arguments.
 
 #### `:duct.module.reitit/opts`
 
 Extra reitit and ring options
   - `:muuntaja`: if boolean true then the default muuntaja instance will be
     used, otherwise the value of `:munntaja`.
-  - `:coercion`: if this value is nil then coercion won't be used. valid keys `[:malli :spec :schema]`
+  - `:coercion`: whether to add reitit.ring.middleware.coercion middleware.
   - `:environment`: environment variables to be passed to be injected to handlers.
-  - `:middlewares`: global middlewares to be passed to reitit middleware key with the default once.
+  - `:middlewares`: global middleware to be passed to reitit middleware key with the default once.
+  - `:cors` cross-origin resource sharing settings, In development, the origin
+    will always be a wildcard as the example above. valid keys: `:headers, :origin, :methods`
+  - `:coercer`: either 'malli 'spec 'schema or a value for custom coercor.
 
-### Registry
+### Overview
 
 `duct.module/reitit` needs the following keys to resolve registry entries or inline symbols:
 

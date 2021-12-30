@@ -4,9 +4,9 @@
             [ring.util.http-response :refer [ok content-type not-found]]))
 
 (defmethod init-key ::index [_ {:keys [path]}]
-  (constantly
-   (or (some-> path io/resource slurp ok (content-type "text/html"))
-       (not-found))))
+  (constantly "string"
+              #_(or (some-> path io/resource slurp ok (content-type "text/html"))
+                    (not-found))))
 
 (defmethod init-key ::ping [_ {:keys [message]}]
   (constantly
