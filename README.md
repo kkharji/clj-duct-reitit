@@ -63,6 +63,8 @@ be a wildcard as the example above. valid keys: `:headers, :origin, :methods`
 #### `:duct.module.reitit/opts`
 
 Extra reitit and ring options
+  - `:muuntaja`: if boolean true then the default muuntaja instance will be
+    used, otherwise the value of `:munntaja`.
   - `:coercion`: if this value is nil then coercion won't be used. valid keys `[:malli :spec :schema]`
   - `:environment`: environment variables to be passed to be injected to handlers.
   - `:middlewares`: global middlewares to be passed to reitit middleware key with the default once.

@@ -12,6 +12,7 @@
   {:summary "Plus with body-params"
    :parameters {:body {:x int?, :y int?}}
    :handler (fn [{{{:keys [x y]} :body} :parameters}]
+
               {:status 200
                :body {:total (+ x y)}})})
 

@@ -1,13 +1,13 @@
 (ns foo.handler
   (:require [clojure.java.io :as io]
-            [integrant.core :refer [init-key]]))
+            [integrant.core :refer [init-key]]
+            [ring.util.http-response :refer [ok content-type not-found]]))
 
 (defmethod init-key ::index [_ {:keys [path]}]
   (constantly
-   {:status 200
-    :body (some->> path io/resource slurp)}))
+   (or (some-> path io/resource slurp ok (content-type "text/html"))
+       (not-found))))
 
 (defmethod init-key ::ping [_ {:keys [message]}]
   (constantly
-   {:status 200
-    :body {:message message}}))
+   (ok {:message message})))
