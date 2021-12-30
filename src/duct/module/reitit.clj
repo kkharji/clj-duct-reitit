@@ -52,10 +52,12 @@
     (let [config     (merge-with-defaults config)
           namespaces (get-namespaces config)
           registry   (resolve-registry namespaces registry)
-          extras     {:duct.router/reitit {:routes routes
-                                           :registry (registry->key registry)
-                                           :opts opts
-                                           :cors cors}}
+          extras     {:duct.router/reitit
+                      {:routes routes
+                       :registry (registry->key registry)
+                       :opts opts
+                       :cors cors
+                       :namespaces namespaces}}
                       ;; :duct.handler/root  {:router (ig/ref :duct.router/reitit)}}
           config (->> (registry->config registry)
                       (merge extras)

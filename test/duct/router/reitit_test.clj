@@ -109,8 +109,7 @@
       (let [handler (ring/ring-handler router)]
         (is (nil? (handler {:request-method :get :uri "/not-a-route"})))
         (is (string? (:body (handler {:request-method :get :uri "/"}))))
-        (is (= "pong" (-> {:request-method :get :uri "/ping"}
-                          handler to-edn :message)))
-        (is (= 9 (-> {:request-method :post :uri "/plus" :body-params {:y 3 :x 6}}
-                     handler to-edn :total)))))))
+        (is (= "pong" (-> {:request-method :get :uri "/ping"} handler to-edn :message)))
+        (is (= 9 (-> {:request-method :post :uri "/plus" :body-params {:y 3 :x 6}} handler to-edn :total)))
+        (is (= 9 (-> {:request-method :get :uri "/plus" :query-params {:y 3 :x 6}} handler to-edn :total)))))))
 
