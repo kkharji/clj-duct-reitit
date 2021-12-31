@@ -66,7 +66,7 @@ arguments.
 
 Extra reitit and ring options
   - `:muuntaja`: if boolean true then the default muuntaja instance will be
-    used, otherwise the value of `:munntaja`.
+    used, otherwise the value of `:muuntaja`.
   - `:coercion`: whether to add reitit.ring.middleware.coercion middleware.
   - `:environment`: environment variables to be passed to be injected to handlers.
   - `:middlewares`: global middleware to be passed to reitit middleware key with the default once.

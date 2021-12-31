@@ -4,24 +4,8 @@
             [duct.reitit.util :as util]
             [duct.handler.root]))
 
-(def ^:private default-config
-  {:duct.core/handler-ns 'handler-ns
-   :duct.core/middleware-ns 'middleware-ns})
-
-(defn- merge-with-defaults [config]
-  (merge default-config config))
-
 (defn- resolve-registry
-  "Given a registry"
-  {:test #(let [namespaces ["foo.handler" "foo.middleware"]
-                assert-eql (fn [a b] (assert (= (resolve-registry namespaces a) b)))]
-            (assert-eql
-             [[:index {:path (ig/ref :index-path)}]
-              [:ping {:message "pong"}]
-              [:plus/with-body]]
-             {:index [:foo.handler/index {:path (ig/ref :index-path)}]
-              :plus/with-body [:foo.handler.plus/with-body {}]
-              :ping  [:foo.handler/ping {:message "pong"}]}))}
+  "Resolve registry keys into a map of {k [resolve config]}"
   [namespaces registry]
   (letfn [(process [f] (reduce f {} registry))
           (resolve [k] (util/resolve-key namespaces k))]
@@ -48,24 +32,33 @@
        (vals)
        (util/get-namespaces (config :duct.core/project-ns))))
 
+(def ^:private default-config
+  {:duct.core/handler-ns 'handler-ns
+   :duct.core/middleware-ns 'middleware-ns})
+
+(def ^:private default-opts
+  {:muuntaja true
+   :coercion true
+   :coercer nil})
+
 (defmethod init-key :duct.module/reitit [_ _]
   (fn [{::keys [registry routes opts cors] :as config}]
-    (let [config     (merge-with-defaults config)
+    (let [config     (merge default-config config)
+          opts       (merge default-opts opts)
           namespaces (get-namespaces config)
           registry   (resolve-registry namespaces registry)
-          extras     {:duct.router/reitit
-                      {:routes routes
-                       :registry (registry->key registry)
-                       :opts opts
-                       :cors cors
-                       :namespaces namespaces}
-                      :duct.handler/root
-                      {:router (ig/ref :duct.router/reitit)
-                       :opts opts}}
-          config (->> (registry->config registry)
-                      (merge extras)
-                      (duct/merge-configs config))]
-      (dissoc config ::opts ::registry ::routes ::cors))))
+          config     (-> config
+                         (duct/merge-configs (registry->config registry))
+                         (dissoc ::opts ::registry ::routes ::cors))
+          merge      (partial merge config)]
+      (merge
+       {:duct.router/middleware opts
+        :duct.router/reitit {:routes routes
+                             :registry (registry->key registry)
+                             :opts (assoc opts :middleware (ig/ref :duct.router/middleware))
+                             :cors cors
+                             :namespaces namespaces}
+        :duct.handler/root (assoc opts :router (ig/ref :duct.router/reitit))}))))
 
 (comment
   (test #'resolve-registry))

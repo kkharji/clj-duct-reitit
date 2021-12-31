@@ -41,7 +41,7 @@
 
     :duct.module.reitit/opts
     {:coercion true ; default true
-     :munntaja true ; default true
+     :muuntaja true ; default true
      :coercer 'spec ; default nil
      :environment {:db (ig/ref :foo/database)} ; default nil
      :middleware []}
