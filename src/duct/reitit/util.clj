@@ -1,6 +1,7 @@
 (ns duct.reitit.util
   (:require [clojure.string :as str]
-            [integrant.core :refer [init-key]]))
+            [integrant.core :refer [init-key]]
+            [jsonista.core :as jsonista]))
 
 (defn- qualify-key [key ns]
   (if (str/includes? (str key) "/")
@@ -63,6 +64,12 @@
         (assert (true? (member? ["a"] "a"))))}
   [coll v]
   (true? (some (fn [x] (= x v)) coll)))
+
+(defn to-edn [response]
+  (-> response
+      (:body)
+      (slurp)
+      (jsonista/read-value jsonista/keyword-keys-object-mapper)))
 
 (comment
   (test #'resolve-key)

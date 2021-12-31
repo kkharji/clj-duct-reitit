@@ -10,7 +10,8 @@
             [reitit.ring.coercion :as rrc]
             [taoensso.timbre :refer [spy]]
             [reitit.coercion.spec :as coercion.spec]
-            [jsonista.core :as jsonista]))
+            [jsonista.core :as jsonista]
+            [duct.reitit.util :refer [to-edn]]))
 
 (def routes
   [["/" :index]
@@ -70,7 +71,7 @@
         (is (= 2 (count middleware)))))
 
     (testing "Malli coercion"
-      (let [addition {:opts {:coercion true} :coercer 'malli}
+      (let [addition {:opts {:coercion true :coercer 'malli}}
             router-config (process-config (extend-config addition))
             data (:data (second router-config))
             middleware (:middleware data)]
@@ -83,14 +84,8 @@
         (is (= 4 (count middleware)))))))
 
 ;; FIXME: This should be automatically done ! when munntaja is on!
-(defn to-edn [response]
-  (-> response
-      (:body)
-      (slurp)
-      (jsonista/read-value jsonista/keyword-keys-object-mapper)))
-
 (deftest reitit-routing
-  (let [extra-config  {:coercer 'spec :opts {:coercion true :munntaja true}}
+  (let [extra-config  {:opts {:coercion true :munntaja true :coercer 'spec}}
         config (extend-config extra-config)
         router (init-key :duct.router/reitit config)]
 

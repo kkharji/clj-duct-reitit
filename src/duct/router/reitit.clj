@@ -46,8 +46,8 @@
 ;; TODO: introduce coercion/compile-request-coercers?
 ;; TODO: pretty coercion errors
 (defn process-config
-  [{{:keys [munntaja environment middleware coercion]} :opts
-    :keys [registry routes namespaces coercer]}]
+  [{{:keys [munntaja environment middleware coercion coercer]} :opts
+    :keys [registry routes namespaces]}]
   (let [routes (get-routes registry routes namespaces)
         config (->> {:environment environment
                      :middleware (get-middleware munntaja middleware coercion)

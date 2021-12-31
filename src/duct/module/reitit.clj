@@ -1,7 +1,8 @@
 (ns duct.module.reitit
   (:require [integrant.core :refer [init-key] :as ig]
             [duct.core :as duct]
-            [duct.reitit.util :as util]))
+            [duct.reitit.util :as util]
+            [duct.handler.root]))
 
 (def ^:private default-config
   {:duct.core/handler-ns 'handler-ns
@@ -57,8 +58,10 @@
                        :registry (registry->key registry)
                        :opts opts
                        :cors cors
-                       :namespaces namespaces}}
-                      ;; :duct.handler/root  {:router (ig/ref :duct.router/reitit)}}
+                       :namespaces namespaces}
+                      :duct.handler/root
+                      {:router (ig/ref :duct.router/reitit)
+                       :opts opts}}
           config (->> (registry->config registry)
                       (merge extras)
                       (duct/merge-configs config))]
