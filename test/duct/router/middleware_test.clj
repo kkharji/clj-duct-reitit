@@ -89,10 +89,16 @@
           [:environment :db] PersistentArrayMap     ;; Environment map injected by environment-middleware
           [:params] PersistentArrayMap)))
 
-    (testing "Spec Exception"
+    (testing "Coercion Spec Response"
+      (let [request (app {:request-method :get :uri "/github/users/1"})]
+        (is (= 200 (:status request)))
+        (is (string? (:body request)))))
+
+    (testing "Coercion Spec Exception"
       (let [requesta (app {:request-method :get :uri (str "/identity/" 32 "/users/" 1)})
             requestb (app {:request-method :get :uri (str "/identity/company/users/tami")})
             requestc (app {:request-method :get :uri "/apple/users/1"})]
+
         (is (= [:spec      ;; the actual spec?
                 :problems  ;; Problems, where to look to understand the issue?
                 :type      ;; :reitit.coercion/request-coercion?
@@ -103,29 +109,23 @@
             "Should provide the following keys in body")
 
         (testing "Parameters validation"
-
           (is (= 400 (:status requesta)) "Should result in 400 status")
-          (comment "get-in :body :problems" [{:path [:company]
-                                              :pred ":clojure.spec.alpha/unknown"
-                                              :val "32"
-                                              :via [:spec$57761/company]
-                                              :in [:company]}])
+          (comment "get-in :body :problems" [{:path [:company] :pred ":clojure.spec.alpha/unknown" :val "32" :via [:spec$57761/company] :in [:company]}])
 
           (is (= 400 (:status requestb)) "Should result in 400 status")
-          (comment "get-in :body :problems" [{:path [:user-id]
-                                              :pred "clojure.core/int?"
-                                              :p:val "tami"
-                                              :p:via [:spec$59018/user-id]
-                                              :p:in [:user-id]}]))
+          (comment "get-in :body :problems" [{:path [:user-id] :pred "clojure.core/int?" :p:val "tami" :p:via [:spec$59018/user-id] :p:in [:user-id]}]))
+
         (testing "Response Validation"
           (is (= 200 (:status requestc)))
           (is (string? (:body requestc)))
            ;; doesn't fail even thoguh the body won't pass the test
           (is (not (str/includes? (:body requestc) "github"))))))
 
-    (testing "Coercion Spec Response"
-      (let [request (app {:request-method :get :uri "/github/users/1"})]
-        (is (= 200 (:status request)))
-        (is (string? (:body request)))))))
-
-
+    (testing "Coercion Pretty Exception"
+      (let [middleware (new-middleware {:munntaja false :coercion true :pretty-coercion? true})
+            app  (->> {:middleware middleware :environment environment}
+                      (new-router routes)
+                      (ring/ring-handler))
+            request {:request-method :get :uri (str "/identity/company/users/tami")}]
+        (is (str/includes? (with-out-str (app request)) "-- Spec failed --------------------")
+            "Should only print to stdout and not return it")))))

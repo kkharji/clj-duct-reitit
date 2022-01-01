@@ -71,6 +71,13 @@
       (slurp)
       (jsonista/read-value jsonista/keyword-keys-object-mapper)))
 
+(defn try-resolve-sym
+  "Attempts to resolve the given symbol ignoring any exceptions.
+  Returns the resolved symbol if successful, otherwise `nil`.
+  credit: @thiru"
+  [sym]
+  (try (requiring-resolve sym) (catch Throwable _)))
+
 (comment
   (test #'resolve-key)
   (test #'get-namespaces)

@@ -1,10 +1,11 @@
 (ns duct.router.middleware
   "Construct Ring-Reitit Global Middleware"
   (:require [integrant.core :refer [init-key]]
-            [duct.reitit.util :refer [compact]]
+            [duct.reitit.util :refer [compact try-resolve-sym]]
             [reitit.ring.coercion :as rcc]
             [reitit.ring.middleware.muuntaja :refer [format-middleware]]
-            [reitit.ring.middleware.parameters :refer [parameters-middleware]]))
+            [reitit.ring.middleware.parameters :refer [parameters-middleware]]
+            [reitit.ring.middleware.exception :as exception :refer [create-exception-middleware]]))
 
 (defn- wrap [name f]
   {:name name
@@ -25,13 +26,29 @@
                (into request)
                (handler)))))
 
-;; TODO: pretty coercion errors
+(defn coercion-error-handler [expound-printer status]
+  (let [printer (expound-printer {:theme :figwheel-theme, :print-specs? false})
+        handler (exception/create-coercion-handler status)]
+    (fn [exception request]
+      (printer (-> exception ex-data :problems))
+      (handler exception request))))
+
+(def pretty-coercion-errors
+  (if-let [expound-printer (try-resolve-sym 'expound.alpha/custom-printer)]
+    [(create-exception-middleware
+      (merge exception/default-handlers
+             {:reitit.coercion/request-coercion (coercion-error-handler expound-printer 400)
+              :reitit.coercion/response-coercion (coercion-error-handler expound-printer 500)}))]))
+
 (defmethod init-key :duct.router/middleware [_ opts]
-  (let [{:keys [muuntaja middleware coercion]} opts]
+  (let [{:keys [muuntaja middleware coercion pretty-coercion?]} opts]
     (->> [parameters-middleware
           environment-middleware
           (when muuntaja format-middleware)
-          (when coercion rcc/coerce-exceptions-middleware)
+          (when coercion
+            (if pretty-coercion?
+              pretty-coercion-errors
+              rcc/coerce-exceptions-middleware))
           (when coercion rcc/coerce-request-middleware)
           (when coercion rcc/coerce-response-middleware)]
          (extend-middleware middleware))))
