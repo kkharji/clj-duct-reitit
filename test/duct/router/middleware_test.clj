@@ -68,7 +68,7 @@
                 ["/:company/users/:user-id"
                  (-> base
                      (assoc-in [:get :response]
-                               {200 {:body #(and (string? %) (str/includes? % "works at"))}})
+                               {200 {:body #(and (string? %) (str/includes? % "github"))}})
                      (assoc-in [:get :handler]
                                (fn [{{:keys [db]}  :environment
                                      {{:keys [user-id company]} :path} :parameters}]
@@ -88,12 +88,44 @@
           [:start-date] Date                        ;; Start date injected by environment-middleware
           [:environment :db] PersistentArrayMap     ;; Environment map injected by environment-middleware
           [:params] PersistentArrayMap)))
-    (testing "Exception"
-      (let [request (app {:request-method :get :uri (str "/identity/" 32 "/users/" 1)})]
-        (is (= 400 (:status request))
-            "Should result in 400 status")
-        (is (= '(:spec :problems :type :coercion :value :in) (keys (:body request)))
-            "Should provide the following keys in body")))))
 
+    (testing "Spec Exception"
+      (let [requesta (app {:request-method :get :uri (str "/identity/" 32 "/users/" 1)})
+            requestb (app {:request-method :get :uri (str "/identity/company/users/tami")})
+            requestc (app {:request-method :get :uri "/apple/users/1"})]
+        (is (= [:spec      ;; the actual spec?
+                :problems  ;; Problems, where to look to understand the issue?
+                :type      ;; :reitit.coercion/request-coercion?
+                :coercion  ;; coercion type used?
+                :value     ;; value checked {:company "32" :user-id "1"}
+                :in]       ;; path to where the spec validation fail?
+               (keys (:body requesta)))
+            "Should provide the following keys in body")
+
+        (testing "Parameters validation"
+
+          (is (= 400 (:status requesta)) "Should result in 400 status")
+          (comment "get-in :body :problems" [{:path [:company]
+                                              :pred ":clojure.spec.alpha/unknown"
+                                              :val "32"
+                                              :via [:spec$57761/company]
+                                              :in [:company]}])
+
+          (is (= 400 (:status requestb)) "Should result in 400 status")
+          (comment "get-in :body :problems" [{:path [:user-id]
+                                              :pred "clojure.core/int?"
+                                              :p:val "tami"
+                                              :p:via [:spec$59018/user-id]
+                                              :p:in [:user-id]}]))
+        (testing "Response Validation"
+          (is (= 200 (:status requestc)))
+          (is (string? (:body requestc)))
+           ;; doesn't fail even thoguh the body won't pass the test
+          (is (not (str/includes? (:body requestc) "github"))))))
+
+    (testing "Coercion Spec Response"
+      (let [request (app {:request-method :get :uri "/github/users/1"})]
+        (is (= 200 (:status request)))
+        (is (string? (:body request)))))))
 
 
