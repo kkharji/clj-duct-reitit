@@ -47,10 +47,12 @@
     (with-default-exceptions
       (:handlers exception)
       coercion-handlers
-      (when (and (:log? exception) logger)
+      (when (:log? exception)
         {::exception/wrap
          (fn [handler e request]
-           (logger/log logger :error (format-exception-log e request (:pretty? exception)))
+           (if logger
+             (logger/log logger :error (format-exception-log e request (:pretty? exception)))
+             (pprint/pprint (format-exception-log e request false)))
            (handler e request))}))))
 
 

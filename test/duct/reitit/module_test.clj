@@ -27,8 +27,7 @@
     :foo/database [{:author "tami5"}]
     :foo/index-path "resources/index.html"
     :foo.handler/exceptions {}
-    :duct.logger/timbre {:set-root-config? true
-                         :level :trace}
+    :duct.logger/timbre {:set-root-config? true :level :trace}
 
     :duct.reitit/routes
     [["/" :index]
@@ -50,6 +49,7 @@
      :exception {:handlers (ig/ref :foo.handler/exceptions)
                  :log? true ;; default true.
                  :pretty? true} ;; default in dev
+     :logger (ig/ref :duct/logger)
      :coercion ;; coercion configuration, default nil.
      {:coercer 'spec ; coercer to be used
       :pretty-coercion? true ; whether to pretty print coercion errors

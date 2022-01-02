@@ -45,6 +45,7 @@ Full configuration demo:
 
     :duct.reitit/options
     {:muuntaja true ; default true, can be a modified instance of muuntaja.
+     :logger #ig/ref :duct/logger ;; logger to be used.
      :coercion ;; coercion configuration, default nil.
      {:coercer 'spec ; coercer to be used
       :pretty-print? true ; whether to pretty print coercion errors requires expound
@@ -86,6 +87,7 @@ Extra reitit and ring options
     - `:error-formater` custom function to format the return body.
   - `:environment`: environment variables to be injected to handlers.
   - `:middlewares`: global middleware to be passed to reitit middleware key with the default once.
+  - `:logger`: logger to be used in logging. TODO: make it default to duct/logger if available
   - `:cross-origin` cross-origin resource sharing configuration, In development, the origin
     will always be a wildcard as the example above. valid keys: `:headers, :origin, :methods`
   - `:exceptions`
@@ -93,7 +95,7 @@ Extra reitit and ring options
       expects a map of exception classes or
       `reitit.ring.middleware.exception` keys like wrap or default, and a
       function that takes `[exception request]`.
-    - `:log?` whether to log exceptions using `duct.logger`, default true if `duct.logger` exists.
+    - `:log?` whether to log exceptions using `duct/logger`, default true if `duct/logger` exists.
     - `:pretty?` whether to make log exceptions easier to read.
 
 [ring-reitit-exception-middleware]: https://cljdoc.org/d/metosin/reitit/0.5.15/doc/ring/exception-handling-with-ring#exceptioncreate-exception-middleware
