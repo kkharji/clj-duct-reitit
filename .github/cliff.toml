@@ -20,7 +20,7 @@ body = """
       {{ commit.body }}  {%- endif -%}\
     {%- if commit.breaking -%}<br /><br />\
       <b>BREAKING</b>: {{commit.breaking_description}}
-    {%- endif -%}
+    {%- endif %}
   </details></dd></dl>\n{% endif %}
 {%- endfor %}
 {% endfor -%}

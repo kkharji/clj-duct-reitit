@@ -1,10 +1,41 @@
+# 🔥 [Unreleased](https://github.com/tami5/clj-duct-reitit)
+
+
+### Exceptions
+
+
+<dl><dd><details><summary><a href="https://github.com/tami5/clj-duct-reitit/commit/0c491bca137461ef69f218de920d863d8ced70a9"><tt>0c491bc</tt></a> ✨ Feature: Response customization based on class or `:type`</summary><br />To further understand how this work. checkout https://cljdoc.org/d/metosin/reitit/0.5.15/doc/ring/exception-handling-with-ring#exceptioncreate-exception-middleware
+  </details></dd></dl>
+
+<dl><dd><details><summary><a href="https://github.com/tami5/clj-duct-reitit/commit/9e9a021df255530083e1eab499ab4f5196f64d29"><tt>9e9a021</tt></a> ✨ Feature: Log exceptions + pretty print.</summary><br />Example output with `pretty?`
+
+~~~clj
+; (err) ERROR [duct.reitit.middleware.exception:52] -
+; (err)
+; (err) {:message "Divide by zero",
+; (err)  :uri "/divide",
+; (err)  :method :get,
+; (err)  :params {:body {:y 0, :x 0}},
+; (err)  :trace
+; (err)  [{:file-name "Numbers.java", :line-number 188}
+; (err)   {:file-name "handler.clj", :line-number 17}
+; (err)   {:file-name "exception.clj", :line-number 49}
+; (err)   {:file-name "middleware.clj", :line-number 73}
+; (err)   {:file-name "middleware.clj", :line-number 12}]}
+; (err)
+~~~
+  </details></dd></dl>
+
+
+
 # 🎉 [0.1.0](https://github.com/tami5/clj-duct-reitit/tree/0.1.0) - 2022-01-02
 
 
 ### General
 
 
-<dl><dd><details><summary><a href="https://github.com/tami5/clj-duct-reitit/commit/b48a45b5b967db7fd8e197861da0a4c6d8b09952"><tt>b48a45b</tt></a> ♻️ Refactor: Move files and change configuration keys</summary><br /><br /><b>BREAKING</b>: rename `:duct.module.reitit/key` => `:duct.reitit/key`</details></dd></dl>
+<dl><dd><details><summary><a href="https://github.com/tami5/clj-duct-reitit/commit/b48a45b5b967db7fd8e197861da0a4c6d8b09952"><tt>b48a45b</tt></a> ♻️ Refactor: Move files and change configuration keys</summary><br /><br /><b>BREAKING</b>: rename `:duct.module.reitit/key` => `:duct.reitit/key`
+  </details></dd></dl>
 
 
 - <a href="https://github.com/tami5/clj-duct-reitit/commit/dbbb99ea3af718a5175321ce3ad442d73d7724c9"><tt>dbbb99e</tt></a> ✅ Test: General update
@@ -13,15 +44,18 @@
 
 <dl><dd><details><summary><a href="https://github.com/tami5/clj-duct-reitit/commit/c610a773a6136556f8a192aec684a88355638889"><tt>c610a77</tt></a> ✨ Feature: Add ring-handler</summary><br />Following module https://github.com/duct-framework/module.web.
 
-Everything will come done to duct.handler/root</details></dd></dl>
+Everything will come done to duct.handler/root
+  </details></dd></dl>
 
 ### Middleware
 
 
-<dl><dd><details><summary><a href="https://github.com/tami5/clj-duct-reitit/commit/10f44a3a47941b2e4507d3edec31372c6510ccdc"><tt>10f44a3</tt></a> ♻️ Refactor: Create macro for defining middlewares</summary><br />a macro to abstract the complexity of creating reitit middleware.</details></dd></dl>
+<dl><dd><details><summary><a href="https://github.com/tami5/clj-duct-reitit/commit/10f44a3a47941b2e4507d3edec31372c6510ccdc"><tt>10f44a3</tt></a> ♻️ Refactor: Create macro for defining middlewares</summary><br />a macro to abstract the complexity of creating reitit middleware.
+  </details></dd></dl>
 
 <dl><dd><details><summary><a href="https://github.com/tami5/clj-duct-reitit/commit/9e8a2214817e70e0875fe7b18287339f58df60de"><tt>9e8a221</tt></a> ♻️ Refactor: Move exception handling</summary><br />Create a new file under reitit.middleware to process and create
-exception middleware.</details></dd></dl>
+exception middleware.
+  </details></dd></dl>
 
 
 - <a href="https://github.com/tami5/clj-duct-reitit/commit/d80f2b460ee7a3aa60ec64253be3c271facf7d3a"><tt>d80f2b4</tt></a> ✅ Test: Coercion
@@ -34,7 +68,8 @@ exception middleware.</details></dd></dl>
 
 <dl><dd><details><summary><a href="https://github.com/tami5/clj-duct-reitit/commit/2bbc180150e2b51192f1d4b5f3d50da16ffa1181"><tt>2bbc180</tt></a> ♻️ Refactor: Change require configuration schema.</summary><br />It's a bit weird how duct works, I don't like the fact that modules are
 outside the base profile. Here I took the same approach as existing
-duct modules and kept module initialization with empty map.</details></dd></dl>
+duct modules and kept module initialization with empty map.
+  </details></dd></dl>
 
 ### Router
 
