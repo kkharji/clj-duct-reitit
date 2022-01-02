@@ -10,7 +10,7 @@ A [Duct][] module that sets [reitit][] as the application router with ring as a 
 
 To install, add the following to your project `:dependencies`:
 
-    [duct/module.reitit "0.0.1"]
+    [duct/module.reitit "0.1.0"]
 
 ## Usage
 
