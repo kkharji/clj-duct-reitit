@@ -28,6 +28,7 @@ Full configuration demo:
 
     :foo/database [{:author "tami5"}]
     :foo/index-path "resources/index.html"
+    :foo.handler/exceptions {}
 
     :duct.reitit/routes
     [["/" :index]
@@ -37,7 +38,7 @@ Full configuration demo:
                :get 'plus/with-query}]]
 
     :duct.reitit/registry
-    {:index {:path (ig/ref :foo/index-path)}
+    {:index {:path #ig/ref :foo/index-path}
      :ping  {:message "pong"}
      :plus/with-body {}
      :get-author {}}
@@ -49,8 +50,11 @@ Full configuration demo:
       :pretty-print? true ; whether to pretty print coercion errors requires expound
       :formater nil} ; function that takes spec validation error map and format it
      :environment ;; Keywords to be injected in requests for convenience.
-     {:db (ig/ref :foo/database)}
+     {:db #ig/ref :foo/database}
      :middleware [] ;; Global middleware to be injected. expected registry key only
+     :exceptions ;; Exception Configuration
+     {:handlers #ig/ref foo.handler/exceptions
+      :log-exceptions? true} ;; default true in dev environment
      :cross-origin ;; cross-origin configuration, the following defaults in for dev and local profile
      {:origin [#".*"] ;; What origin to allow
       :methods [:get :post :delete :options]}}}}
@@ -83,7 +87,14 @@ Extra reitit and ring options
   - `:middlewares`: global middleware to be passed to reitit middleware key with the default once.
   - `:cross-origin` cross-origin resource sharing configuration, In development, the origin
     will always be a wildcard as the example above. valid keys: `:headers, :origin, :methods`
+  - `:exceptions`
+    - `:handlers`: basic wrapper around [ring-reitit-exception-middleware]. It
+      expects a map of exception classes or
+      `reitit.ring.middleware.exception` keys like wrap or default, and a
+      function that takes `[exception request]`.
+    - `:log-exceptions?` whether to log exceptions using `duct.logger`, default true
 
+[ring-reitit-exception-middleware]: https://cljdoc.org/d/metosin/reitit/0.5.15/doc/ring/exception-handling-with-ring#exceptioncreate-exception-middleware
 ### Overview
 
 `duct.module/reitit` needs the following keys to resolve registry entries or inline symbols:

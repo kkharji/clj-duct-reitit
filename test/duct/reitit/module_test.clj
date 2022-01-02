@@ -25,26 +25,31 @@
 
     :foo/database [{:author "tami5"}]
     :foo/index-path "resources/index.html"
+    :foo.handler/exceptions {}
 
     :duct.reitit/routes
     [["/" :index]
      ["/author" :get-author]
      ["/ping" {:get {:handler :ping}}]
      ["/plus" {:post :plus/with-body
-               :get 'plus/with-query}]]
+               :get 'plus/with-query}]
+     ["/divide" {:get :divide}]]
 
     :duct.reitit/registry
     {:index {:path (ig/ref :foo/index-path)}
      :ping  {:message "pong"}
      :plus/with-body {}
-     :get-author {}}
+     :get-author {}
+     :divide {}}
 
     :duct.reitit/options
     {:muuntaja true ; default true, can be a modified instance of muuntaja.
+     :exception {:handlers (ig/ref :foo.handler/exceptions)
+                 :log-exceptions? true} ;; default true in dev environment
      :coercion ;; coercion configuration, default nil.
      {:coercer 'spec ; coercer to be used
       :pretty-coercion? true ; whether to pretty print coercion errors
-      :error-formater nil} ; function that takes spec validation error map and format it
+      :formater nil} ; function that takes spec validation error map and format it
      :environment ;; Keywords to be injected in requests for convenience.
      {:db (ig/ref :foo/database)}
      :middleware [] ;; Global middleware to be injected. expected registry key only
@@ -74,7 +79,7 @@
       (let [router (config :duct.router/reitit)
             routes (routes router)]
         (is (= :reitit.core/router (type router)))
-        (is (= 4 (count routes)))
+        (is (= 5 (count routes)))
         (is (vector? (-> (get routes "/") :environment :db)))
         (are [route path] (fn? (get-in (r/match-by-path router route) path))
           "/"     [:data :handler]
@@ -91,4 +96,5 @@
         (is (= "pong" (-> {:request-method :get :uri "/ping"} handler to-edn :message)))
         (is (= 9 (-> {:request-method :post :uri "/plus" :body-params {:y 3 :x 6}} handler to-edn :total)))
         (is (= 9 (-> {:request-method :get :uri "/plus" :query-params {:y 3 :x 6}} handler to-edn :total)))
-        (is (= "tami5" (-> {:request-method :get :uri "/author"} handler to-edn :author)))))))
+        (is (= "tami5" (-> {:request-method :get :uri "/author"} handler to-edn :author)))
+        (is (= "Divide by zero" (-> {:request-method :get :uri "/divide" :body-params {:y 0 :x 0}} handler to-edn :cause)))))))

@@ -11,3 +11,20 @@
 (defmethod init-key ::ping [_ {:keys [message]}]
   (constantly
    {:status 200 :body {:message message}}))
+
+(defmethod init-key ::divide [_ _]
+  (fn [{{:keys [x y]} :body-params}]
+    {:status 200 :body (/ x y)}))
+
+(defmethod init-key ::exceptions [_ _]
+  {java.lang.NullPointerException
+   (fn [_ r]
+     {:status 500
+      :body {:cause "No parameters received"
+             :uri (:uri r)}})
+   java.lang.ArithmeticException
+   (fn [e r]
+     {:status 500
+      :body {:cause (ex-message e)
+             :data (:body-params r)
+             :uri (:uri r)}})})

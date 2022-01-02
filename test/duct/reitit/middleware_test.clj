@@ -3,9 +3,7 @@
             [clojure.test :refer [is are deftest testing]]
             [integrant.core :as ig :refer [init-key]]
             [reitit.ring :as ring]
-            [clojure.pprint :refer [pprint]]
-            [duct.reitit.util :refer [compact]]
-            [taoensso.timbre :refer [spy]]
+            [duct.reitit.util :refer [compact spy]]
             [reitit.coercion.spec :as coercion.spec]
             [clojure.string :as str])
   (:import [clojure.lang PersistentArrayMap]
@@ -131,10 +129,22 @@
             "Should only print to stdout and not return it")))))
 
 (deftest custom-error-handling
-  (let [error-handlers {:error "error" ;; ex-data with :type ::error
-                        :exception "exception" ;; ex-data with ::exception or ::failure
-                        java.sql.SQLException "sql-exception" ;; SQLException and all it's child classes
-                        :exception/default "default" ;; override the default handler
-                        :exception/wrap {:log true}} ;; print stack-traces for all exceptions
-        middleware (new-middleware {:munntaja false :coercion {} :error-handling error-handlers})]))
+  (let [exception {java.lang.NullPointerException (fn [_ r]
+                                                    {:status 500
+                                                     :cause "No parameters received"
+                                                     :uri (:uri r)})
+                   java.lang.ArithmeticException (fn [e r]
+                                                   {:status 500
+                                                    :cause (ex-message e)
+                                                    :data (:body-params r)
+                                                    :uri (:uri r)})}
+        middleware (new-middleware {:munntaja false :coercion nil :exception {:handlers exception}})
+        router (new-router [["/math" (fn [{{:keys [lhs rhs]} :body-params}] (/ lhs rhs))]] {:middleware middleware})
+        handler (ring/ring-handler router)
+        math-response (handler {:request-method :get :uri "/math" :body-params {:lhs 5 :rhs 0}})
+        no-params-response (handler {:request-method :get :uri "/math"})]
+    (is (= "Divide by zero" (:cause math-response)))
+    (is (= {:lhs 5, :rhs 0} (:data math-response)))
+    (is (= "No parameters received" (:cause no-params-response)))))
+
 

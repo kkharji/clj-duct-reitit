@@ -1,16 +1,6 @@
 (ns duct.reitit.middleware.exception
-  (:require [duct.reitit.util :refer [try-resolve-sym]]
+  (:require [duct.reitit.util :refer [try-resolve-sym spy]]
             [reitit.ring.middleware.exception :as exception :refer [default-handlers create-exception-middleware]]))
-
-(derive ::error ::exception)
-(derive ::failure ::exception)
-(derive ::horror ::exception)
-
-(defn handler [message exception request]
-  {:status 500
-   :body {:message message
-          :exception (str exception)
-          :uri (:uri request)}})
 
 (defn coercion-error-handler [status expound-printer _formatter]
   (let [printer (expound-printer {:theme :figwheel-theme, :print-specs? false})
@@ -36,7 +26,7 @@
 
 (defn get-exception-middleware
   "Create custom exception middleware."
-  [{:keys [coercion _exception]}]
-  (with-default-exceptions
-    (coercion-handlers coercion)))
+  [{:keys [coercion exception]}]
+  (let [coercion-handlers (coercion-handlers coercion)]
+    (with-default-exceptions (:handlers exception) coercion-handlers)))
 
