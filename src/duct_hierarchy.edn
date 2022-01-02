@@ -1,4 +1,5 @@
 {:duct.router/reitit      [:duct/router]
  :duct.module/reitit      [:duct/module]
+ :duct.reitit/registry    [:duct/const]
  :duct.core/handler-ns    [:duct/const]
  :duct.core/middleware-ns [:duct/const]}

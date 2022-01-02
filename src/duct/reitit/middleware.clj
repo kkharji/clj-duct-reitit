@@ -1,4 +1,4 @@
-(ns duct.router.middleware
+(ns duct.reitit.middleware
   "Construct Ring-Reitit Global Middleware"
   (:require [integrant.core :refer [init-key]]
             [duct.reitit.util :refer [compact try-resolve-sym]]
@@ -31,8 +31,9 @@
         handler (exception/create-coercion-handler status)]
     (fn [exception request]
       (printer (-> exception ex-data :problems))
-      (handler exception request))))
+      (handler (-> exception) request))))
 
+;; TODO: use custom coercion error formater for response
 (def pretty-coercion-errors
   (if-let [expound-printer (try-resolve-sym 'expound.alpha/custom-printer)]
     [(create-exception-middleware
@@ -40,13 +41,13 @@
              {:reitit.coercion/request-coercion (coercion-error-handler expound-printer 400)
               :reitit.coercion/response-coercion (coercion-error-handler expound-printer 500)}))]))
 
-(defmethod init-key :duct.router/middleware [_ opts]
-  (let [{:keys [muuntaja middleware coercion pretty-coercion?]} opts]
+(defmethod init-key :duct.reitit/middleware [_ options]
+  (let [{:keys [muuntaja middleware coercion]} options]
     (->> [parameters-middleware
           environment-middleware
           (when muuntaja format-middleware)
           (when coercion
-            (if pretty-coercion?
+            (if (coercion :pretty-coercion?)
               pretty-coercion-errors
               rcc/coerce-exceptions-middleware))
           (when coercion rcc/coerce-request-middleware)

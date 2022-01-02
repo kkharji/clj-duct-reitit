@@ -1,4 +1,4 @@
-(ns duct.router.reitit
+(ns duct.reitit.router
   (:require [clojure.walk :refer [postwalk]]
             [duct.logger :as logger]
             [duct.reitit.util :as util :refer [compact member? resolve-key]]
@@ -11,9 +11,7 @@
             [reitit.ring :as ring]))
 
 (def ^:private coercion-index
-  {:malli  malli/coercion
-   :spec   spec/coercion
-   :schema schema/coercion})
+  {:malli malli/coercion :spec spec/coercion :schema schema/coercion})
 
 (defn- get-resolver [registry namespaces]
   (let [resolve (partial resolve-key namespaces)
@@ -24,23 +22,16 @@
             (valid? x)  (get registry x)
             :else x))))
 
-;; TODO: introduce coercion/compile-request-coercers?
-(defn ^:private get-muuntaja [muuntaja]
-  (cond (boolean? muuntaja) muuntaja-instance
-        (nil? muuntaja) nil
-        :else muuntaja))
+; :compile coercion/compile-request-coercers?
+(defn process-options [{:keys [muuntaja environment middleware coercion]}]
+  {:data (compact
+          {:environment environment
+           :middleware middleware
+           :muuntaja  (cond (boolean? muuntaja) muuntaja-instance (nil? muuntaja) nil :else muuntaja)
+           :coercion (some-> coercion :coercer keyword coercion-index)})})
 
-; :compile (when coercer compile-request-coercers) ;; (and compile-coercers?)
-(defn get-options [{:keys [muuntaja environment middleware coercer]}]
-  {:data
-   (compact
-    {:environment environment
-     :muuntaja (get-muuntaja muuntaja)
-     :middleware middleware
-     :coercion (some-> coercer keyword coercion-index)})})
-
-(defmethod init-key :duct.router/reitit [_ {:keys [logger registry routes namespaces opts]}]
+(defmethod init-key :duct.router/reitit [_ {:keys [logger registry routes namespaces options]}]
   (when logger (logger/log logger :report ::init))
   (ring/router
    (postwalk (get-resolver registry namespaces) routes)
-   (get-options opts)))
+   (process-options options)))

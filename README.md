@@ -21,35 +21,43 @@ To add this module to your configuration, add the `:duct.module/reitit` key.
 Full configuration demo:
 ```edn
 {:duct.module/reitit {}
- :duct.profile/base
- {:duct.core/project-ns foo
-  :duct.core/handler-ns handler ; default value
-  :duct.core/middleware-ns middleware ; default value
+   :duct.profile/base
+   {:duct.core/project-ns 'foo
+    :duct.core/handler-ns 'handler ; default value
+    :duct.core/middleware-ns 'middleware ; default value
 
-  :foo/database {}
-  :foo/index-path "resources/index.html"
+    :foo/database [{:author "tami5"}]
+    :foo/index-path "resources/index.html"
 
-  :duct.module.reitit/routes
-  [["/" :index]
-   ["/ping" {:get {:handler :pong}}]
-   ["/plus" {:get plus/with-query ;; > function: project-ns.handler-ns.plus/with-body
-             :post :plus/with-body}]]
+    :duct.reitit/routes
+    [["/" :index]
+     ["/author" :get-author]
+     ["/ping" {:get {:handler :ping}}]
+     ["/plus" {:post :plus/with-body
+               :get 'plus/with-query}]]
 
-  :duct.module.reitit/registry
-  {:index {:path #ig/ref :index-path}
-   :ping  {:message "pong"}
-   :plus/with-body {}
+    :duct.reitit/registry
+    {:index {:path (ig/ref :foo/index-path)}
+     :ping  {:message "pong"}
+     :plus/with-body {}
+     :get-author {}}
 
-  :duct.module.reitit/opts
-  {:coercor 'spec ; default nil
-   :environment {:db #ig/ref :foo/database} ; default nil
-   :middlewares []
-   :cors {:origin [#".*"] ;; defaults in for dev and local environment
-          :methods [:get :post :delete :options]}}}}
+    :duct.reitit/options
+    {:muuntaja true ; default true, can be a modified instance of muuntaja.
+     :coercion ;; coercion configuration, default nil.
+     {:coercer 'spec ; coercer to be used
+      :pretty-coercion? true ; whether to pretty print coercion errors
+      :error-formater nil} ; function that takes spec validation error map and format it
+     :environment ;; Keywords to be injected in requests for convenience.
+     {:db (ig/ref :foo/database)}
+     :middleware [] ;; Global middleware to be injected. expected registry key only
+     :cross-origin ;; cross-origin configuration, the following defaults in for dev and local profile
+     {:origin [#".*"] ;; What origin to allow
+      :methods [:get :post :delete :options]}}}}
 ```
 ### Keys
 
-#### `:duct.module.reitit/routes`
+#### `:duct.reitit/routes`
 
 See the [reitit syntax][] for more information. Keywords within the routes are
 replaced later with matching registry key or a valid symbol. like with
@@ -57,22 +65,24 @@ replaced later with matching registry key or a valid symbol. like with
 
 [reitit syntax]: https://cljdoc.org/d/metosin/reitit/0.5.5/doc/basics/route-syntax
 
-#### `:duct.module.reitit/registry`
+#### `:duct.reitit/registry`
 
 A map of handler and middleware keys and their integrant initialization
 arguments.
 
-#### `:duct.module.reitit/opts`
+#### `:duct.reitit/options`
 
 Extra reitit and ring options
   - `:muuntaja`: if boolean true then the default muuntaja instance will be
     used, otherwise the value of `:muuntaja`.
-  - `:coercion`: whether to add reitit.ring.middleware.coercion middleware.
-  - `:environment`: environment variables to be passed to be injected to handlers.
+  - `:coercion`: coercion configuration, default nil.
+    - `:coercer`: either 'malli 'spec 'schema or a value for custom coercor.
+    - `:pretty-coercion?` whether to pretty print coercion spec errors
+    - `:error-formater` custom function to format the return body.
+  - `:environment`: environment variables to be injected to handlers.
   - `:middlewares`: global middleware to be passed to reitit middleware key with the default once.
-  - `:cors` cross-origin resource sharing settings, In development, the origin
+  - `:cross-origin` cross-origin resource sharing configuration, In development, the origin
     will always be a wildcard as the example above. valid keys: `:headers, :origin, :methods`
-  - `:coercer`: either 'malli 'spec 'schema or a value for custom coercor.
 
 ### Overview
 

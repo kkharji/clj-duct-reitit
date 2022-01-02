@@ -1,5 +1,5 @@
-(ns duct.router.middleware-test
-  (:require [duct.router.middleware]
+(ns duct.reitit.middleware-test
+  (:require [duct.reitit.middleware]
             [clojure.test :refer [is are deftest testing]]
             [integrant.core :as ig :refer [init-key]]
             [reitit.ring :as ring]
@@ -17,13 +17,13 @@
   (ring/router routes {:data config}))
 
 (defn- new-middleware [cfg]
-  (init-key :duct.router/middleware cfg))
+  (init-key :duct.reitit/middleware cfg))
 
 (defn- count-result [res]
   (-> res :reitit.core/match :result compact count))
 
 (deftest default-middleware-behavior
-  (let [middleware (new-middleware {:munntaja false :coercion false})
+  (let [middleware (new-middleware {:munntaja false :coercion nil})
         routes     [["/identity" identity]
                     ["/identity-get" {:get identity}]
                     ["/user/:id" {:get identity}]
@@ -58,7 +58,7 @@
 (defn is-int [str] (try (Integer/parseInt str) (catch Exception _ nil)))
 
 (deftest coercion-middleware-behavior
-  (let [middleware (new-middleware {:munntaja false :coercion true})
+  (let [middleware (new-middleware {:munntaja false :coercion {}})
         base {:get {:coercion coercion.spec/coercion
                     :parameters {:path {:company #(and (string? %)
                                                        (not (is-int %)))
@@ -122,7 +122,7 @@
           (is (not (str/includes? (:body requestc) "github"))))))
 
     (testing "Coercion Pretty Exception"
-      (let [middleware (new-middleware {:munntaja false :coercion true :pretty-coercion? true})
+      (let [middleware (new-middleware {:munntaja false :coercion {:pretty-coercion? true}})
             app  (->> {:middleware middleware :environment environment}
                       (new-router routes)
                       (ring/ring-handler))

@@ -1,6 +1,6 @@
-(ns duct.module.reitit-test
+(ns duct.reitit.module-test
   (:require [clojure.test :refer [deftest testing is are]]
-            [duct.module.reitit]
+            [duct.reitit.module]
             [foo.handler]
             [foo.handler.plus]
             [duct.core :as core]
@@ -26,29 +26,31 @@
     :foo/database [{:author "tami5"}]
     :foo/index-path "resources/index.html"
 
-    :duct.module.reitit/routes
+    :duct.reitit/routes
     [["/" :index]
      ["/author" :get-author]
      ["/ping" {:get {:handler :ping}}]
      ["/plus" {:post :plus/with-body
                :get 'plus/with-query}]]
 
-    :duct.module.reitit/registry
+    :duct.reitit/registry
     {:index {:path (ig/ref :foo/index-path)}
      :ping  {:message "pong"}
      :plus/with-body {}
      :get-author {}}
 
-    :duct.module.reitit/opts
-    {:coercion true ; default true
-     :muuntaja true ; default true
-     :coercer 'spec ; default nil
-     :environment {:db (ig/ref :foo/database)} ; default nil
-     :middleware []}
-
-    :duct.module.reitit/cors
-    {:origin [#".*"] ;; defaults in for dev and local environment
-     :methods [:get :post :delete :options]}}})
+    :duct.reitit/options
+    {:muuntaja true ; default true, can be a modified instance of muuntaja.
+     :coercion ;; coercion configuration, default nil.
+     {:coercer 'spec ; coercer to be used
+      :pretty-coercion? true ; whether to pretty print coercion errors
+      :error-formater nil} ; function that takes spec validation error map and format it
+     :environment ;; Keywords to be injected in requests for convenience.
+     {:db (ig/ref :foo/database)}
+     :middleware [] ;; Global middleware to be injected. expected registry key only
+     :cross-origin ;; cross-origin configuration, the following defaults in for dev and local profile
+     {:origin [#".*"] ;; What origin to allow
+      :methods [:get :post :delete :options]}}}}) ;; which methods to allow
 
 (defmethod ig/init-key :foo.handler/get-author [_ _]
   (fn [{{:keys [db]} :environment}]

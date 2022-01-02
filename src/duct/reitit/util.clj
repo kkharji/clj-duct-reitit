@@ -38,11 +38,11 @@
       (first result))))
 
 (defn get-namespaces
-  {:test
-   #(assert (= ["foo.handler" "foo.middleware"]
-               (get-namespaces 'foo ['handler 'middleware])))}
-  [root nss]
-  (mapv (partial str root ".") nss))
+  "Get and merge namespaces using :duct.core/project-ns, :duct.core/handler-ns, and :duct.core/middleware-ns"
+  [config]
+  (let [root (config :duct.core/project-ns)
+        nss (select-keys config [:duct.core/handler-ns :duct.core/middleware-ns])]
+    (mapv (partial str root ".") (vals nss))))
 
 (defn compact
   "Remove nils from a given coll (map, list, vector)"
@@ -83,5 +83,3 @@
   (test #'get-namespaces)
   (test #'compact)
   (test #'member?))
-
-
