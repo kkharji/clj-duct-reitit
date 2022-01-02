@@ -1,4 +1,4 @@
-# 🔥 [Unreleased](https://github.com/tami5/clj-duct-reitit)
+# 🎉 [0.1.0](https://github.com/tami5/clj-duct-reitit/tree/0.1.0) - 2022-01-02
 
 
 ### General
@@ -16,6 +16,12 @@
 Everything will come done to duct.handler/root</details></dd></dl>
 
 ### Middleware
+
+
+<dl><dd><details><summary><a href="https://github.com/tami5/clj-duct-reitit/commit/10f44a3a47941b2e4507d3edec31372c6510ccdc"><tt>10f44a3</tt></a> ♻️ Refactor: Create macro for defining middlewares</summary><br />a macro to abstract the complexity of creating reitit middleware.</details></dd></dl>
+
+<dl><dd><details><summary><a href="https://github.com/tami5/clj-duct-reitit/commit/9e8a2214817e70e0875fe7b18287339f58df60de"><tt>9e8a221</tt></a> ♻️ Refactor: Move exception handling</summary><br />Create a new file under reitit.middleware to process and create
+exception middleware.</details></dd></dl>
 
 
 - <a href="https://github.com/tami5/clj-duct-reitit/commit/d80f2b460ee7a3aa60ec64253be3c271facf7d3a"><tt>d80f2b4</tt></a> ✅ Test: Coercion
