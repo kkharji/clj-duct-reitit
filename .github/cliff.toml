@@ -5,19 +5,21 @@ body = """
     # 🎉 [{{ version }}]({{ repo }}/tree/{{ version }}) - {{ timestamp | date(format="%Y-%m-%d") }}
 {% else %}\
     # 🔥 [Unreleased]({{ repo }})
-{% endif %}\
+{% endif %}
 
-{% for group, commits in commits | group_by(attribute="group") %}
-## {{ group | upper_first }}
-{% for scope, commits in commits | group_by(attribute="scope") %}\n
+{% for scope, commits in commits | group_by(attribute="scope") -%}
+### {{ scope | upper_first }}
+
+{% for group, commits in commits | group_by(attribute="group") -%}
+
 {% for commit in commits %}
-{% if commit.breaking or commit.body %}<dl><dd><details><summary>{% else %}- {% endif %}\
-  {{ scope }} <b><a href="{{ repo }}/commit/{{ commit.id }}">{{ commit.message }}</a></b>
+{% if commit.breaking or commit.body -%}<dl><dd><details><summary>{% else %}- {% endif -%}\
+  <a href="{{ repo }}/commit/{{ commit.id }}"><tt>{{ commit.id | truncate(length=7, end="") }}</tt></a> {{ group }}: {{ commit.message | upper_first }}
   {%- if commit.breaking or commit.body %}</summary>\
     {%- if commit.body %}<br />\
-      <sup>{{ commit.body }}</sup>{%- endif -%}\
-    {%- if commit.breaking %}<br /><br />\
-      <sup><b>BREAKING</b>: {{commit.breaking_description}}</sup>
+      {{ commit.body }}  {%- endif -%}\
+    {%- if commit.breaking -%}<br /><br />\
+      <b>BREAKING</b>: {{commit.breaking_description}}
     {%- endif -%}
   </details></dd></dl>\n{% endif %}
 {%- endfor %}
@@ -28,15 +30,16 @@ trim = false # remove the leading and trailing whitespaces from the template
 
 [git]
 commit_parsers = [
-  { message = "^feat",   group = "<!-- 0 -->✨ Features", default_scope = "global"},
-  { message = "^enh",    group = "<!-- 1 -->🌱 Enhancements", default_scope = "global"},
-  { message = "^ref",    group = "<!-- 2 -->♻️ Refactor", default_scope = "global"},
-  { message = "^fix",    group = "<!-- 3 -->🐛 Bug Fixes", default_scope = "global"},
-  { message = "^doc",    group = "<!-- 4 -->📚 Documentation", default_scope = "global"},
-  { message = "^test",   group = "<!-- 5 -->✅ Testing", default_scope = "global"},
-  { message = "^chore",  group = "<!-- 6 -->👷 Miscellaneous", default_scope = "global"},
-  { body = ".*security", group = "<!-- 7 -->🔒 Security", default_scope = "global"},
-  { message = "^chore\\(release\\):", skip = true, default_scope = "global"},
+  { message = ".*changelog", skip = true},
+  { message = "^chore\\(release\\):", skip = true },
+  { message = "^feat",   group = "✨ Feature", default_scope = "general"},
+  { message = "^enh",    group = "🌱 Enhancement", default_scope = "general"},
+  { message = "^ref",    group = "♻️ Refactor", default_scope = "general"},
+  { message = "^fix",    group = "🐛 Fix", default_scope = "general"},
+  { message = "^doc",    group = "📚 Documentation", default_scope = "general"},
+  { message = "^test",   group = "✅ Test", default_scope = "general"},
+  { message = "^chore",  group = "👷 Misc", default_scope = "general"},
+  { body = ".*security", group = "🔒 Security", default_scope = "general"},
 ]
 tag_pattern = "[0-9]*" # glob pattern for matching git tags
 conventional_commits = true

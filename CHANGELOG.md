@@ -1,38 +1,64 @@
+# 🔥 [Unreleased](https://github.com/tami5/clj-duct-reitit)
+
+
+### General
+
+
+<dl><dd><details><summary><a href="https://github.com/tami5/clj-duct-reitit/commit/b48a45b5b967db7fd8e197861da0a4c6d8b09952"><tt>b48a45b</tt></a> ♻️ Refactor: Move files and change configuration keys</summary><br /><br /><b>BREAKING</b>: rename `:duct.module.reitit/key` => `:duct.reitit/key`</details></dd></dl>
+
+
+- <a href="https://github.com/tami5/clj-duct-reitit/commit/dbbb99ea3af718a5175321ce3ad442d73d7724c9"><tt>dbbb99e</tt></a> ✅ Test: General update
+### Handler
+
+
+<dl><dd><details><summary><a href="https://github.com/tami5/clj-duct-reitit/commit/c610a773a6136556f8a192aec684a88355638889"><tt>c610a77</tt></a> ✨ Feature: Add ring-handler</summary><br />Following module https://github.com/duct-framework/module.web.
+
+Everything will come done to duct.handler/root</details></dd></dl>
+
+### Middleware
+
+
+- <a href="https://github.com/tami5/clj-duct-reitit/commit/d80f2b460ee7a3aa60ec64253be3c271facf7d3a"><tt>d80f2b4</tt></a> ✅ Test: Coercion
+- <a href="https://github.com/tami5/clj-duct-reitit/commit/f46c883b2a0eacadfac1f1aa64946f08098ba32f"><tt>f46c883</tt></a> ✅ Test: Parameters validation
+
+- <a href="https://github.com/tami5/clj-duct-reitit/commit/f2406d02710c78cfc463a24ad05b8141960f21d7"><tt>f2406d0</tt></a> ✨ Feature: Access environment key within handlers
+- <a href="https://github.com/tami5/clj-duct-reitit/commit/eb7eaa0ea5e86605285aa83ca6b8c03e56990c6f"><tt>eb7eaa0</tt></a> ✨ Feature: Pretty print coercion errors.
+### Module
+
+
+<dl><dd><details><summary><a href="https://github.com/tami5/clj-duct-reitit/commit/2bbc180150e2b51192f1d4b5f3d50da16ffa1181"><tt>2bbc180</tt></a> ♻️ Refactor: Change require configuration schema.</summary><br />It's a bit weird how duct works, I don't like the fact that modules are
+outside the base profile. Here I took the same approach as existing
+duct modules and kept module initialization with empty map.</details></dd></dl>
+
+### Router
+
+
+- <a href="https://github.com/tami5/clj-duct-reitit/commit/6bc18676f013391801607b66ea0605fa30ca43f0"><tt>6bc1867</tt></a> ♻️ Refactor: Decouple middleware processing
+
+- <a href="https://github.com/tami5/clj-duct-reitit/commit/3fe33fb730885871a7ececc13af9b9eb304046ca"><tt>3fe33fb</tt></a> ✨ Feature: Implement router key
+
+
 # 🎉 [0.0.1](https://github.com/tami5/clj-duct-reitit/tree/0.0.1) - 2021-12-29
 
-## <!-- 0 -->✨ Features
+
+### Dev
 
 
-
-- changelog <b><a href="https://github.com/tami5/clj-duct-reitit/commit/fee896e1c81cb9b9a96d53be5648f883cb24a1e9">auto-generator</a></b>
-
-
-
-- dev <b><a href="https://github.com/tami5/clj-duct-reitit/commit/dbddfa9ad5d533525c94f9e95bb7795bccf304d8">add clj-dev</a></b>
+- <a href="https://github.com/tami5/clj-duct-reitit/commit/dbddfa9ad5d533525c94f9e95bb7795bccf304d8"><tt>dbddfa9</tt></a> ✨ Feature: Add clj-dev
+### Module
 
 
+- <a href="https://github.com/tami5/clj-duct-reitit/commit/87afe9fec9a2ac6651a5f713c31745f00a4fac07"><tt>87afe9f</tt></a> ♻️ Refactor: Cleanup & readability
 
-- module <b><a href="https://github.com/tami5/clj-duct-reitit/commit/829cbaae4290c0de9d4dd51fd6ead1efdac530a6">process registry and merge to config</a></b>
-- module <b><a href="https://github.com/tami5/clj-duct-reitit/commit/7c74c8be0e6ef9e2a59e08e03444cc67298a8bad">use module.registry for passing functions</a></b>
+- <a href="https://github.com/tami5/clj-duct-reitit/commit/3abcd06d0dd65597bc0c53c6d5c077ed5b2a8811"><tt>3abcd06</tt></a> ✅ Test: Read module configuration
 
-## <!-- 2 -->♻️ Refactor
-
-
-
-- module <b><a href="https://github.com/tami5/clj-duct-reitit/commit/87afe9fec9a2ac6651a5f713c31745f00a4fac07">cleanup & readability</a></b>
-
-## <!-- 4 -->📚 Documentation
+- <a href="https://github.com/tami5/clj-duct-reitit/commit/829cbaae4290c0de9d4dd51fd6ead1efdac530a6"><tt>829cbaa</tt></a> ✨ Feature: Process registry and merge to config
+- <a href="https://github.com/tami5/clj-duct-reitit/commit/7c74c8be0e6ef9e2a59e08e03444cc67298a8bad"><tt>7c74c8b</tt></a> ✨ Feature: Use module.registry for passing functions
+### Readme
 
 
-
-- readme <b><a href="https://github.com/tami5/clj-duct-reitit/commit/df77cb073e8ed312bc59525d702866704e8cdd54">explain how duct.module/reitit should work</a></b>
-- readme <b><a href="https://github.com/tami5/clj-duct-reitit/commit/4f1a09ae045d0ee652aed13156c5b074f6bbe6f1">rename reitit/options -> reitit/opts</a></b>
-- readme <b><a href="https://github.com/tami5/clj-duct-reitit/commit/9cec7b8d8a9e0fd5457f9587781ce869bb742362">introduce malli as coercion option</a></b>
-
-## <!-- 5 -->✅ Testing
-
-
-
-- module <b><a href="https://github.com/tami5/clj-duct-reitit/commit/3abcd06d0dd65597bc0c53c6d5c077ed5b2a8811">read module configuration</a></b>
+- <a href="https://github.com/tami5/clj-duct-reitit/commit/df77cb073e8ed312bc59525d702866704e8cdd54"><tt>df77cb0</tt></a> 📚 Documentation: Explain how duct.module/reitit should work
+- <a href="https://github.com/tami5/clj-duct-reitit/commit/4f1a09ae045d0ee652aed13156c5b074f6bbe6f1"><tt>4f1a09a</tt></a> 📚 Documentation: Rename reitit/options -> reitit/opts
+- <a href="https://github.com/tami5/clj-duct-reitit/commit/9cec7b8d8a9e0fd5457f9587781ce869bb742362"><tt>9cec7b8</tt></a> 📚 Documentation: Introduce malli as coercion option
 
 
