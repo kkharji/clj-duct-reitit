@@ -78,6 +78,25 @@
   [sym]
   (try (requiring-resolve sym) (catch Throwable _)))
 
+(defmacro spy
+  "A simpler version of Timbre's spy, printing the original expression and the
+  evaluated result. Returns the eval'd expression.
+  credit: @thiru"
+  [expr]
+  `(let [evaled# ~expr]
+     (println (str '~expr " => "))
+     (clojure.pprint/pprint evaled#)
+     evaled#))
+
+(defn wrap-compile-middleware [f]
+  (fn [opts _] (fn [handler] (fn [request] (f opts _ handler request)))))
+
+(defmacro defm [name args body]
+  `(let [fun# (fn ~args ~body)]
+     (def ~name
+       {:name ~(keyword (str *ns* "/" name))
+        :compile (wrap-compile-middleware fun#)})))
+
 (comment
   (test #'resolve-key)
   (test #'get-namespaces)

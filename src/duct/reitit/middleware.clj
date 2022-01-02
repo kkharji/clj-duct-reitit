@@ -1,15 +1,17 @@
 (ns duct.reitit.middleware
   "Construct Ring-Reitit Global Middleware"
   (:require [integrant.core :refer [init-key]]
-            [duct.reitit.util :refer [compact try-resolve-sym]]
+            [duct.reitit.util :refer [compact defm]]
             [reitit.ring.coercion :as rcc]
             [reitit.ring.middleware.muuntaja :refer [format-middleware]]
             [reitit.ring.middleware.parameters :refer [parameters-middleware]]
             [reitit.ring.middleware.exception :as exception :refer [create-exception-middleware]]))
 
-(defn- wrap [name f]
-  {:name name
-   :compile (fn [opts _] (fn [handler] (fn [request] (f opts _ handler request))))})
+(defm environment-middleware [{:keys [environment]} _ handler request]
+  (let [inject #(handler (into request %))]
+    (inject {:environment environment
+             :id  (java.util.UUID/randomUUID)
+             :start-date (java.util.Date.)})))
 
 (defn- extend-middleware [middleware defaults]
   (->> (or middleware [])
@@ -17,14 +19,6 @@
        (vec)
        (compact)))
 
-(def environment-middleware
-  (wrap ::environment
-        (fn [{:keys [environment]} _ handler request]
-          (->> {:environment environment
-                :id  (java.util.UUID/randomUUID)
-                :start-date (java.util.Date.)}
-               (into request)
-               (handler)))))
 
 (defn coercion-error-handler [expound-printer status]
   (let [printer (expound-printer {:theme :figwheel-theme, :print-specs? false})

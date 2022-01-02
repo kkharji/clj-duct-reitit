@@ -1,0 +1,1 @@
+{:lint-as {duct.reitit.util/defm clojure.core/defn}}
