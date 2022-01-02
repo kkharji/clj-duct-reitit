@@ -122,10 +122,19 @@
           (is (not (str/includes? (:body requestc) "github"))))))
 
     (testing "Coercion Pretty Exception"
-      (let [middleware (new-middleware {:munntaja false :coercion {:pretty-coercion? true}})
+      (let [middleware (new-middleware {:munntaja false :coercion {:pretty-print? true}})
             app  (->> {:middleware middleware :environment environment}
                       (new-router routes)
                       (ring/ring-handler))
             request {:request-method :get :uri (str "/identity/company/users/tami")}]
         (is (str/includes? (with-out-str (app request)) "-- Spec failed --------------------")
             "Should only print to stdout and not return it")))))
+
+(deftest custom-error-handling
+  (let [error-handlers {:error "error" ;; ex-data with :type ::error
+                        :exception "exception" ;; ex-data with ::exception or ::failure
+                        java.sql.SQLException "sql-exception" ;; SQLException and all it's child classes
+                        :exception/default "default" ;; override the default handler
+                        :exception/wrap {:log true}} ;; print stack-traces for all exceptions
+        middleware (new-middleware {:munntaja false :coercion {} :error-handling error-handlers})]))
+

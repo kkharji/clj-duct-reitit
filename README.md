@@ -46,8 +46,8 @@ Full configuration demo:
     {:muuntaja true ; default true, can be a modified instance of muuntaja.
      :coercion ;; coercion configuration, default nil.
      {:coercer 'spec ; coercer to be used
-      :pretty-coercion? true ; whether to pretty print coercion errors
-      :error-formater nil} ; function that takes spec validation error map and format it
+      :pretty-print? true ; whether to pretty print coercion errors requires expound
+      :formater nil} ; function that takes spec validation error map and format it
      :environment ;; Keywords to be injected in requests for convenience.
      {:db (ig/ref :foo/database)}
      :middleware [] ;; Global middleware to be injected. expected registry key only

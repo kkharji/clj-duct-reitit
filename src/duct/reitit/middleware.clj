@@ -5,45 +5,39 @@
             [reitit.ring.coercion :as rcc]
             [reitit.ring.middleware.muuntaja :refer [format-middleware]]
             [reitit.ring.middleware.parameters :refer [parameters-middleware]]
-            [reitit.ring.middleware.exception :as exception :refer [create-exception-middleware]]))
+            [duct.reitit.middleware.exception :as exception :refer [get-exception-middleware]]))
 
+;; TODO: inject environment keys instead
 (defm environment-middleware [{:keys [environment]} _ handler request]
   (let [inject #(handler (into request %))]
     (inject {:environment environment
              :id  (java.util.UUID/randomUUID)
              :start-date (java.util.Date.)})))
 
-(defn- extend-middleware [middleware defaults]
-  (->> (or middleware [])
-       (concat defaults)
-       (vec)
-       (compact)))
+(defn- get-coercion-middleware [{:keys [pretty-print?] :as coercion}]
+  (when coercion
+    {:coerce-exceptions (when-not pretty-print? rcc/coerce-exceptions-middleware)
+     :coerce-request rcc/coerce-request-middleware
+     :coerce-response rcc/coerce-response-middleware}))
 
+(defn- get-format-middleware [muuntaja]
+  (when muuntaja format-middleware))
 
-(defn coercion-error-handler [expound-printer status]
-  (let [printer (expound-printer {:theme :figwheel-theme, :print-specs? false})
-        handler (exception/create-coercion-handler status)]
-    (fn [exception request]
-      (printer (-> exception ex-data :problems))
-      (handler (-> exception) request))))
-
-;; TODO: use custom coercion error formater for response
-(def pretty-coercion-errors
-  (if-let [expound-printer (try-resolve-sym 'expound.alpha/custom-printer)]
-    [(create-exception-middleware
-      (merge exception/default-handlers
-             {:reitit.coercion/request-coercion (coercion-error-handler expound-printer 400)
-              :reitit.coercion/response-coercion (coercion-error-handler expound-printer 500)}))]))
+(defn- extend-middleware [middleware & defaults]
+  (->>  defaults (conj (or middleware [])) (apply concat) vec compact))
 
 (defmethod init-key :duct.reitit/middleware [_ options]
-  (let [{:keys [muuntaja middleware coercion]} options]
-    (->> [parameters-middleware
-          environment-middleware
-          (when muuntaja format-middleware)
-          (when coercion
-            (if (coercion :pretty-coercion?)
-              pretty-coercion-errors
-              rcc/coerce-exceptions-middleware))
-          (when coercion rcc/coerce-request-middleware)
-          (when coercion rcc/coerce-response-middleware)]
-         (extend-middleware middleware))))
+  (let [{:keys [muuntaja middleware coercion]} options
+        {:keys [coerce-response coerce-request coerce-exceptions]} (get-coercion-middleware coercion)
+        format-middleware    (get-format-middleware muuntaja)
+        exception-middleware (get-exception-middleware options)
+        create-middleware (partial extend-middleware middleware)]
+    (create-middleware
+     parameters-middleware
+     environment-middleware
+     format-middleware
+     exception-middleware
+     coerce-exceptions
+     coerce-request
+     coerce-response)))
+
