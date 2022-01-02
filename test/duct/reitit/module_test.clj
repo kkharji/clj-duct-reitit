@@ -18,6 +18,7 @@
 
 (def basic-config
   {:duct.module/reitit {}
+   :duct.module/logging {:set-root-config? true}
    :duct.profile/base
    {:duct.core/project-ns 'foo
     :duct.core/handler-ns 'handler ; default value
@@ -26,6 +27,8 @@
     :foo/database [{:author "tami5"}]
     :foo/index-path "resources/index.html"
     :foo.handler/exceptions {}
+    :duct.logger/timbre {:set-root-config? true
+                         :level :trace}
 
     :duct.reitit/routes
     [["/" :index]
@@ -45,7 +48,8 @@
     :duct.reitit/options
     {:muuntaja true ; default true, can be a modified instance of muuntaja.
      :exception {:handlers (ig/ref :foo.handler/exceptions)
-                 :log-exceptions? true} ;; default true in dev environment
+                 :log? true ;; default true.
+                 :pretty? true} ;; default in dev
      :coercion ;; coercion configuration, default nil.
      {:coercer 'spec ; coercer to be used
       :pretty-coercion? true ; whether to pretty print coercion errors

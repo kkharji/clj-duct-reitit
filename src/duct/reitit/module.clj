@@ -32,7 +32,7 @@
 (defmethod init-key :duct.module/reitit [_ _]
   (fn [{:duct.reitit/keys [registry routes options] :as config}]
     (let [config     (merge default-config config)
-          options    (merge default-options options)
+          options    (assoc (merge default-options options) :logger (ig/ref :duct/logger))
           namespaces (get-namespaces config)
           registry   (resolve-registry namespaces registry)
           config     (dissoc (with-registry config registry) :duct.reitit/options :duct.reitit/routes)

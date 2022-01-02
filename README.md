@@ -53,8 +53,9 @@ Full configuration demo:
      {:db #ig/ref :foo/database}
      :middleware [] ;; Global middleware to be injected. expected registry key only
      :exceptions ;; Exception Configuration
-     {:handlers #ig/ref foo.handler/exceptions
-      :log-exceptions? true} ;; default true in dev environment
+     {:handlers #ig/ref :foo.handler/exceptions
+      :log? true  ;; default true
+      :pretty?} true ;; default true in dev
      :cross-origin ;; cross-origin configuration, the following defaults in for dev and local profile
      {:origin [#".*"] ;; What origin to allow
       :methods [:get :post :delete :options]}}}}
@@ -92,7 +93,8 @@ Extra reitit and ring options
       expects a map of exception classes or
       `reitit.ring.middleware.exception` keys like wrap or default, and a
       function that takes `[exception request]`.
-    - `:log-exceptions?` whether to log exceptions using `duct.logger`, default true
+    - `:log?` whether to log exceptions using `duct.logger`, default true if `duct.logger` exists.
+    - `:pretty?` whether to make log exceptions easier to read.
 
 [ring-reitit-exception-middleware]: https://cljdoc.org/d/metosin/reitit/0.5.15/doc/ring/exception-handling-with-ring#exceptioncreate-exception-middleware
 ### Overview

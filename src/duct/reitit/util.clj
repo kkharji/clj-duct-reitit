@@ -54,7 +54,7 @@
   (cond (or (list? coll) (vector? coll))
         (into [] (filter (complement nil?) coll))
         (map? coll)
-        (into {} (filter (comp not nil? second) coll))))
+        (into {} (filter #(and (seq %) ((comp not nil? second) %)) coll))))
 
 (defn member?
   "same as contains?, but check if v is part of coll."

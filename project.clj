@@ -8,7 +8,6 @@
                  [metosin/reitit      "0.5.15"]
                  [metosin/ring-http-response "0.9.3"]
                  [duct/core           "0.7.0"]
-                 [duct/logger.timbre  "0.5.0"]
                  [integrant           "0.7.0"]
                  [medley              "1.0.0"]]
   :profiles {:repl
@@ -16,7 +15,9 @@
               :resource-paths ["dev/resources"]
               :dependencies [[clj-http/clj-http "3.12.3"]
                              [ring/ring-mock    "0.4.0"]
-                             [tami5/clj-dev     "0.1.1"]]}}
+                             [tami5/clj-dev     "0.1.1"]
+                             [duct/logger.timbre  "0.5.0"]
+                             [duct/module.logging "0.5.0"]]}}
   :plugins [[cider/cider-nrepl      "0.27.3"]
             [lein-shell             "0.5.0"]]
   :aliases {"update-changelog" ["shell" "./bin/update-changelog"]})

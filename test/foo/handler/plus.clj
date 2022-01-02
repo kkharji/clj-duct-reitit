@@ -14,4 +14,3 @@
    :handler (fn [{{{:keys [x y]} :body} :parameters}]
               {:status 200
                :body {:total (+ x y)}})})
-
