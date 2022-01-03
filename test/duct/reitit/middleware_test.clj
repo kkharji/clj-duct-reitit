@@ -120,7 +120,7 @@
           (is (not (str/includes? (:body requestc) "github"))))))
 
     (testing "Coercion Pretty Exception"
-      (let [middleware (new-middleware {:munntaja false :coercion {:pretty-print? true}})
+      (let [middleware (new-middleware {:munntaja false :coercion {:pretty? true}})
             app  (->> {:middleware middleware :environment environment}
                       (new-router routes)
                       (ring/ring-handler))

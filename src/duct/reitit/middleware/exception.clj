@@ -14,8 +14,8 @@
       (fn [exception request] ;; TODO: format
         (handler exception request)))))
 
-(defn coercion-handlers [{:keys [pretty-print? formatter]}]
-  (let [printer (when pretty-print? (try-resolve-sym 'expound.alpha/custom-printer))]
+(defn coercion-handlers [{:keys [pretty? formatter]}]
+  (let [printer (when pretty? (try-resolve-sym 'expound.alpha/custom-printer))]
     (when (or printer formatter)
       #:reitit.coercion
        {:request-coercion (coercion-error-handler 400 printer formatter)

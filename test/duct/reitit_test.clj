@@ -143,7 +143,7 @@
     ;; Coercion configuration
     :duct.reitit/coercion   {:enable true
                              :coercer 'spec ; Coercer to be used
-                             :pretty-coercion? true ; Whether to pretty print coercion errors
+                             :pretty? true ; Whether to pretty print coercion errors
                              :formater nil} ; Function that takes spec validation error map and format it
 
     ;; Cross-origin configuration, the following defaults in for dev and local profile

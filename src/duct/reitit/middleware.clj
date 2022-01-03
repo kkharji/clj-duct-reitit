@@ -14,9 +14,9 @@
              :id  (java.util.UUID/randomUUID)
              :start-date (java.util.Date.)})))
 
-(defn- get-coercion-middleware [{:keys [pretty-print?] :as coercion}]
+(defn- get-coercion-middleware [{:keys [pretty?] :as coercion}]
   (when coercion
-    {:coerce-exceptions (when-not pretty-print? rcc/coerce-exceptions-middleware)
+    {:coerce-exceptions (when-not pretty? rcc/coerce-exceptions-middleware)
      :coerce-request rcc/coerce-request-middleware
      :coerce-response rcc/coerce-response-middleware}))
 
