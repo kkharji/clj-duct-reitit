@@ -23,15 +23,14 @@
             :else x))))
 
 ; :compile coercion/compile-request-coercers?
-(defn process-options [{:keys [muuntaja environment middleware coercion]}]
+(defn process-options [{:keys [muuntaja environment coercion]}]
   {:data (compact
           {:environment environment
-           :middleware middleware
            :muuntaja  (cond (boolean? muuntaja) muuntaja-instance (nil? muuntaja) nil :else muuntaja)
            :coercion (some-> coercion :coercer keyword coercion-index)})})
 
-(defmethod init-key :duct.router/reitit [_ {:keys [logger registry routes namespaces options]}]
+(defmethod init-key :duct.router/reitit [_ {:keys [logger registry middleware routes namespaces options]}]
   (when logger (logger/log logger :report ::init))
   (ring/router
    (postwalk (get-resolver registry namespaces) routes)
-   (process-options options)))
+   (assoc-in (process-options options) [:data :middleware] middleware)))

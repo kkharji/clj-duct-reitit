@@ -28,3 +28,9 @@
       :body {:cause (ex-message e)
              :data (:body-params r)
              :uri (:uri r)}})})
+
+(defmethod init-key :foo.handler/get-author [_ _]
+  (fn [{{:keys [db]} :environment}]
+    {:status 200 :body (first db)}))
+
+

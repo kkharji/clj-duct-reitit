@@ -2,4 +2,5 @@
  :duct.module/reitit      [:duct/module]
  :duct.reitit/registry    [:duct/const]
  :duct.core/handler-ns    [:duct/const]
- :duct.core/middleware-ns [:duct/const]}
+ :duct.core/middleware-ns [:duct/const]
+ :duct.reitit/options     [:duct/const]}
