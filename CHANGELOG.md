@@ -26,6 +26,17 @@
 ~~~
   </details></dd></dl>
 
+<dl><dd><details><summary><a href="https://github.com/tami5/clj-duct-reitit/commit/f966f834fa710e930adf8a5a3316020ce66ce653"><tt>f966f83</tt></a> ✨ Feature: Optional duct/logger</summary><br />if no logger provided in options, just use pretty print for logging
+  </details></dd></dl>
+
+### Module
+
+
+- <a href="https://github.com/tami5/clj-duct-reitit/commit/6f0cf240f34f5a0b70982d9c73949ae31c76564f"><tt>6f0cf24</tt></a> ✅ Test: Detailed tests for configuration processing
+
+- <a href="https://github.com/tami5/clj-duct-reitit/commit/fb9f033571559c07df2e0f2caac928f401704399"><tt>fb9f033</tt></a> ✨ Feature: Apply defaults + change schema
+
+- <a href="https://github.com/tami5/clj-duct-reitit/commit/74eacfd309e2ec7f1999e2dbd6e373b0b3a381e1"><tt>74eacfd</tt></a> 📚 Documentation: Update description and spec in readme.
 
 
 # 🎉 [0.1.0](https://github.com/tami5/clj-duct-reitit/tree/0.1.0) - 2022-01-02

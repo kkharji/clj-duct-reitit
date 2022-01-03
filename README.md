@@ -72,7 +72,9 @@ Full configuration demo:
 
     ;; Cross-origin configuration, the following defaults in for dev profile
     :duct.reitit/cross-origin {:origin [#".*"] ;; What origin to allow.
-                               :methods [:get :post :delete :options]}}}```
+                               :methods [:get :post :delete :options]}}}
+```
+
 ### Configuration Keys
 
 #### `:duct.reitit/routes`
@@ -125,15 +127,16 @@ coercion configuration, default nil.
 
 #### `:duct.reitit/exception`
 
-Extra reitit and ring options
-  - `:muuntaja`:
-  - `:exceptions`
-    - `:handlers`: basic wrapper around [ring-reitit-exception-middleware]. It
-      expects a map of exception classes or
-      `reitit.ring.middleware.exception` keys like wrap or default, and a
-      function that takes `[exception request]`.
-    - `:log?` whether to log exceptions using `duct/logger`, default true if `duct/logger` exists.
-    - `:pretty?` whether to make log exceptions easier to read.
+Exception Handling configuration
+
+- `:handlers`: basic wrapper around [ring-reitit-exception-middleware].
+  It expects a map of exception classes or
+  `reitit.ring.middleware.exception` keys like wrap or default, and a
+  function that takes `[exception request]`.
+- `:log?` whether to log exceptions. default true. If
+  `duct.reitit/logger`, then it will be used to log exceptions,
+  otherwise it would use pretty print.
+- `:pretty?` whether to make log exceptions easier to read.
 
 [ring-reitit-exception-middleware]: https://cljdoc.org/d/metosin/reitit/0.5.15/doc/ring/exception-handling-with-ring#exceptioncreate-exception-middleware
 
