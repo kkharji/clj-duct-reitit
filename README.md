@@ -21,58 +21,58 @@ To add this module to your configuration, add the `:duct.module/reitit` key.
 Full configuration demo:
 ```edn
 {:duct.module/reitit {}
-   :duct.module/logging {:set-root-config? true}
-   :duct.profile/base
-   {:duct.core/project-ns 'foo
-    :duct.core/handler-ns 'handler ; default value
-    :duct.core/middleware-ns 'middleware ; default value
+ :duct.module/logging {:set-root-config? true}
+ :duct.profile/base
+ {:duct.core/project-ns 'foo
+  :duct.core/handler-ns 'handler ; default value
+  :duct.core/middleware-ns 'middleware ; default value
 
-    :foo/database            [{:author "tami5"}]
-    :foo/index-path          "resources/index.html"
-    :foo.handler/exceptions  {}
+  :foo/database            [{:author "tami5"}]
+  :foo/index-path          "resources/index.html"
+  :foo.handler/exceptions  {}
 
-    :duct.logger/timbre      {:set-root-config? true :level :trace}
+  :duct.logger/timbre      {:set-root-config? true :level :trace}
 
-    :duct.reitit/routes     [["/" :index]
-                             ["/author" :get-author]
-                             ["/ping" {:get {:handler :ping}}]
-                             ["/plus" {:post :plus/with-body
-                                       :get 'plus/with-query}]
-                             ["/divide" {:get :divide}]]
+  :duct.reitit/routes     [["/" :index]
+                           ["/author" :get-author]
+                           ["/ping" {:get {:handler :ping}}]
+                           ["/plus" {:post :plus/with-body
+                                     :get 'plus/with-query}]
+                           ["/divide" {:get :divide}]]
 
-    ;; Registry to find handlers and local and global middleware
-    :duct.reitit/registry  {:index {:path  (ig/ref :foo/index-path)} ;; init foo.handler/index with {:path}
-                            :ping  {:message "pong"} ;; init foo.handler/ping with {:message}
-                            :plus/with-body {} ;; init foo.handler.plus/with-body
-                            :get-author {} ;; init foo.handler/get-author
-                            :divide {}} ;; init foo.handler/divide
+  ;; Registry to find handlers and local and global middleware
+  :duct.reitit/registry  {:index {:path  (ig/ref :foo/index-path)} ;; init foo.handler/index with {:path}
+                          :ping  {:message "pong"} ;; init foo.handler/ping with {:message}
+                          :plus/with-body {} ;; init foo.handler.plus/with-body
+                          :get-author {} ;; init foo.handler/get-author
+                          :divide {}} ;; init foo.handler/divide
 
-    ;; Logger to be used in reitit module.
-    :duct.reitit/logger      #ig/ref :duct/logger
+  ;; Logger to be used in reitit module.
+  :duct.reitit/logger      #ig/ref :duct/logger
 
-    ;; Whether to use muuntaja for formatting. default true, can be a modified instance of muuntaja.
-    :duct.reitit/muuntaja   true
+  ;; Whether to use muuntaja for formatting. default true, can be a modified instance of muuntaja.
+  :duct.reitit/muuntaja   true
 
-    ;; Keywords to be injected in requests for convenience.
-    :duct.reitit/environment  {:db #ig/ref :foo/database}
+  ;; Keywords to be injected in requests for convenience.
+  :duct.reitit/environment  {:db #ig/ref :foo/database}
 
-    ;; Global middleware to be injected. expected registry key only
-    :duct.reitit/middleware   []
+  ;; Global middleware to be injected. expected registry key only
+  :duct.reitit/middleware   []
 
-    ;; Exception handling configuration
-    :duct.reitit/exception  {:handlers #ig/ref :foo.handler/exceptions
-                             :log? true ;; default true.
-                             :pretty? true} ;; default in dev.
+  ;; Exception handling configuration
+  :duct.reitit/exception  {:handlers #ig/ref :foo.handler/exceptions
+                           :log? true ;; default true.
+                           :pretty? true} ;; default in dev.
 
-    ;; Coercion configuration
-    :duct.reitit/coercion   {:enable true
-                             :coercer 'spec ; Coercer to be used
-                             :pretty? true  ; Whether to pretty print coercion errors
-                             :formater nil} ; Function that takes spec validation error map and format it
+  ;; Coercion configuration
+  :duct.reitit/coercion   {:enable true
+                           :coercer 'spec ; Coercer to be used
+                           :pretty? true  ; Whether to pretty print coercion errors
+                           :formater nil} ; Function that takes spec validation error map and format it
 
-    ;; Cross-origin configuration, the following defaults in for dev profile
-    :duct.reitit/cross-origin {:origin [#".*"] ;; What origin to allow.
-                               :methods [:get :post :delete :options]}}}
+  ;; Cross-origin configuration, the following defaults in for dev profile
+  :duct.reitit/cross-origin {:origin [#".*"] ;; What origin to allow.
+                             :methods [:get :post :delete :options]}}}
 ```
 
 ### Configuration Keys
