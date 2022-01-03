@@ -36,9 +36,9 @@
 
     (testing "Request Keys"
       (let [request (app {:request-method :get :uri "/identity"})]
-        (is (= [:environment                 ;; environment key [environment-middleware]
-                :form-params                 ;; ..
+        (is (= [:form-params                 ;; ..
                 :id                          ;; Request id [environment-middleware]
+                :name                        ;; injected key [environment-middleware]
                 :params                      ;; Merge of all types of params. NOTE: Doesn't seem accurate.
                 :path-params                 ;; ..
                 :query-params                ;; ..
@@ -49,10 +49,10 @@
                 :reitit.core/router]         ;; Reitit Router
                (sort (keys request))))
         (are [path expected-type] (= expected-type (type (get-in request path)))
-          [:id] UUID                         ;; Random UUID to the request injected by environment-middleware
-          [:start-date] Date                 ;; Start date injected by environment-middleware
-          [:environment :name] String        ;; Environment map injected by environment-middleware
-          [:params] PersistentArrayMap)))))  ;; A marge of all params types injected by parameters-middleware
+          [:id] UUID                         ;; Random UUID to the request injected by [environment-middleware]
+          [:start-date] Date                 ;; Start date injected by [environment-middleware]
+          [:name] String                     ;; injected key by [environment-middleware]
+          [:params] PersistentArrayMap)))))  ;; A marge of all params types injected by [parameters-middleware]
 (defn is-int [str] (try (Integer/parseInt str) (catch Exception _ nil)))
 
 (deftest coercion-middleware-behavior
@@ -84,7 +84,7 @@
         (are [path expected-type] (= expected-type (type (get-in request path)))
           [:id] UUID                                ;; Random UUID to the request injected by environment-middleware
           [:start-date] Date                        ;; Start date injected by environment-middleware
-          [:environment :db] PersistentArrayMap     ;; Environment map injected by environment-middleware
+          [:db] PersistentArrayMap                  ;; injected key by [environment-middleware]
           [:params] PersistentArrayMap)))
 
     (testing "Coercion Spec Response"

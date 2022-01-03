@@ -30,7 +30,7 @@
              :uri (:uri r)}})})
 
 (defmethod init-key :foo.handler/get-author [_ _]
-  (fn [{{:keys [db]} :environment}]
+  (fn [{:keys [db]}]
     {:status 200 :body (first db)}))
 
 

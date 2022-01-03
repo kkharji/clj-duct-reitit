@@ -25,13 +25,6 @@
    {::exception {:pretty? false}
     ::coercion {:pretty? false}}})
 
-(comment
-  (merge-configs base-config
-                 (configs :development)
-                 {:duct.core/handler-ns 'server.handler
-                  ::coercion {:coercer 'spec}
-                  ::muuntaja true}))
-
 (defn- merge-to-options [configs]
   (reduce-kv
    (fn [acc k v]

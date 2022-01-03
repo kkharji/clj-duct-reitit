@@ -8,11 +8,11 @@
             [duct.reitit.middleware.exception :as exception :refer [get-exception-middleware]]))
 
 ;; TODO: inject environment keys instead
-(defm environment-middleware [{:keys [environment]} _ handler request]
+(defm environment-middleware [opts _ handler request]
   (let [inject #(handler (into request %))]
-    (inject {:environment environment
-             :id  (java.util.UUID/randomUUID)
-             :start-date (java.util.Date.)})))
+    (inject (assoc (opts :environment)
+                   :id  (java.util.UUID/randomUUID)
+                   :start-date (java.util.Date.)))))
 
 (defn- get-coercion-middleware [{:keys [pretty?] :as coercion}]
   (when coercion
