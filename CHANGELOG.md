@@ -29,6 +29,17 @@
 <dl><dd><details><summary><a href="https://github.com/tami5/clj-duct-reitit/commit/f966f834fa710e930adf8a5a3316020ce66ce653"><tt>f966f83</tt></a> ✨ Feature: Optional duct/logger</summary><br />if no logger provided in options, just use pretty print for logging
   </details></dd></dl>
 
+### General
+
+
+- <a href="https://github.com/tami5/clj-duct-reitit/commit/833195483b5bffd2b3979f0fe695c1c12f1f26d9"><tt>8331954</tt></a> 👷 Misc: Update outdated keys
+### Middleware
+
+
+<dl><dd><details><summary><a href="https://github.com/tami5/clj-duct-reitit/commit/d8d1d2feaca7c62f8e2f1a319855dda8c40ce4f7"><tt>d8d1d2f</tt></a> ✨ Feature: Inject keys instead of injecting `environment`</summary><br />This was originally the intended behavior. but it was ignored in last
+release.
+  </details></dd></dl>
+
 ### Module
 
 
@@ -37,6 +48,10 @@
 - <a href="https://github.com/tami5/clj-duct-reitit/commit/fb9f033571559c07df2e0f2caac928f401704399"><tt>fb9f033</tt></a> ✨ Feature: Apply defaults + change schema
 
 - <a href="https://github.com/tami5/clj-duct-reitit/commit/74eacfd309e2ec7f1999e2dbd6e373b0b3a381e1"><tt>74eacfd</tt></a> 📚 Documentation: Update description and spec in readme.
+### Readme
+
+
+- <a href="https://github.com/tami5/clj-duct-reitit/commit/e69b1af17bd8b1ee244acda9185b0a919169458e"><tt>e69b1af</tt></a> 👷 Misc: Format configuration example
 
 
 # 🎉 [0.1.0](https://github.com/tami5/clj-duct-reitit/tree/0.1.0) - 2022-01-02
