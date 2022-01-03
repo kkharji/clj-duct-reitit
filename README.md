@@ -21,47 +21,59 @@ To add this module to your configuration, add the `:duct.module/reitit` key.
 Full configuration demo:
 ```edn
 {:duct.module/reitit {}
+   :duct.module/logging {:set-root-config? true}
    :duct.profile/base
    {:duct.core/project-ns 'foo
     :duct.core/handler-ns 'handler ; default value
     :duct.core/middleware-ns 'middleware ; default value
 
-    :foo/database [{:author "tami5"}]
-    :foo/index-path "resources/index.html"
-    :foo.handler/exceptions {}
+    :foo/database            [{:author "tami5"}]
+    :foo/index-path          "resources/index.html"
+    :foo.handler/exceptions  {}
 
-    :duct.reitit/routes
-    [["/" :index]
-     ["/author" :get-author]
-     ["/ping" {:get {:handler :ping}}]
-     ["/plus" {:post :plus/with-body
-               :get 'plus/with-query}]]
+    :duct.logger/timbre      {:set-root-config? true :level :trace}
 
-    :duct.reitit/registry
-    {:index {:path #ig/ref :foo/index-path}
-     :ping  {:message "pong"}
-     :plus/with-body {}
-     :get-author {}}
+    :duct.reitit/routes     [["/" :index]
+                             ["/author" :get-author]
+                             ["/ping" {:get {:handler :ping}}]
+                             ["/plus" {:post :plus/with-body
+                                       :get 'plus/with-query}]
+                             ["/divide" {:get :divide}]]
 
-    :duct.reitit/options
-    {:muuntaja true ; default true, can be a modified instance of muuntaja.
-     :logger #ig/ref :duct/logger ;; logger to be used.
-     :coercion ;; coercion configuration, default nil.
-     {:coercer 'spec ; coercer to be used
-      :pretty-print? true ; whether to pretty print coercion errors requires expound
-      :formater nil} ; function that takes spec validation error map and format it
-     :environment ;; Keywords to be injected in requests for convenience.
-     {:db #ig/ref :foo/database}
-     :middleware [] ;; Global middleware to be injected. expected registry key only
-     :exceptions ;; Exception Configuration
-     {:handlers #ig/ref :foo.handler/exceptions
-      :log? true  ;; default true
-      :pretty?} true ;; default true in dev
-     :cross-origin ;; cross-origin configuration, the following defaults in for dev and local profile
-     {:origin [#".*"] ;; What origin to allow
-      :methods [:get :post :delete :options]}}}}
-```
-### Keys
+    ;; Registry to find handlers and local and global middleware
+    :duct.reitit/registry  {:index {:path  (ig/ref :foo/index-path)} ;; init foo.handler/index with {:path}
+                            :ping  {:message "pong"} ;; init foo.handler/ping with {:message}
+                            :plus/with-body {} ;; init foo.handler.plus/with-body
+                            :get-author {} ;; init foo.handler/get-author
+                            :divide {}} ;; init foo.handler/divide
+
+    ;; Logger to be used in reitit module.
+    :duct.reitit/logger      #ig/ref :duct/logger
+
+    ;; Whether to use muuntaja for formatting. default true, can be a modified instance of muuntaja.
+    :duct.reitit/muuntaja   true
+
+    ;; Keywords to be injected in requests for convenience.
+    :duct.reitit/environment  {:db #ig/ref :foo/database}
+
+    ;; Global middleware to be injected. expected registry key only
+    :duct.reitit/middleware   []
+
+    ;; Exception handling configuration
+    :duct.reitit/exception  {:handlers #ig/ref :foo.handler/exceptions
+                             :log? true ;; default true.
+                             :pretty? true} ;; default in dev.
+
+    ;; Coercion configuration
+    :duct.reitit/coercion   {:enable true
+                             :coercer 'spec ; Coercer to be used
+                             :pretty-coercion? true ; Whether to pretty print coercion errors
+                             :formater nil} ; Function that takes spec validation error map and format it
+
+    ;; Cross-origin configuration, the following defaults in for dev profile
+    :duct.reitit/cross-origin {:origin [#".*"] ;; What origin to allow.
+                               :methods [:get :post :delete :options]}}}```
+### Configuration Keys
 
 #### `:duct.reitit/routes`
 
@@ -76,20 +88,45 @@ replaced later with matching registry key or a valid symbol. like with
 A map of handler and middleware keys and their integrant initialization
 arguments.
 
-#### `:duct.reitit/options`
+Reitit module will take care of injecting it in duct configuration,
+without requiring the user to define them outside the registry.
+
+```javascript
+<project-ns>.<handler-ns>[.<result key namespace>]/<result key name>
+```
+
+#### `:duct.reitit/logger`
+
+Logger to be used in logging stuff. e.g. `duct/logger`. default nil
+
+#### `:duct.reitit/muuntaja `
+
+Muuntaja for formatting request and responses.
+
+if provided value is boolean true then the default muuntaja instance will be used,
+otherwise an instance can be set. default true
+
+#### `:duct.reitit/environment`
+
+Keys to be injected to be available in reitit handlers for convenience. Default empty map.
+
+####  `:duct.reitit/middleware`
+
+Middleware to be injected in reitit `{:data {:middleware []}` along with
+other default configurable ones like `:duct.reitit/coercion` and `:duct.reitit/exception`.
+
+#### `:duct.reitit/coercion`
+
+coercion configuration, default nil.
+
+- `:coercer`: either 'malli 'spec 'schema or a value for custom coercor. default nil
+- `:pretty?` whether to pretty print coercion spec errors. default in dev
+- `:formater` custom function to format the return body. default nil
+
+#### `:duct.reitit/exception`
 
 Extra reitit and ring options
-  - `:muuntaja`: if boolean true then the default muuntaja instance will be
-    used, otherwise the value of `:muuntaja`.
-  - `:coercion`: coercion configuration, default nil.
-    - `:coercer`: either 'malli 'spec 'schema or a value for custom coercor.
-    - `:pretty-coercion?` whether to pretty print coercion spec errors
-    - `:error-formater` custom function to format the return body.
-  - `:environment`: environment variables to be injected to handlers.
-  - `:middlewares`: global middleware to be passed to reitit middleware key with the default once.
-  - `:logger`: logger to be used in logging. TODO: make it default to duct/logger if available
-  - `:cross-origin` cross-origin resource sharing configuration, In development, the origin
-    will always be a wildcard as the example above. valid keys: `:headers, :origin, :methods`
+  - `:muuntaja`:
   - `:exceptions`
     - `:handlers`: basic wrapper around [ring-reitit-exception-middleware]. It
       expects a map of exception classes or
@@ -99,6 +136,13 @@ Extra reitit and ring options
     - `:pretty?` whether to make log exceptions easier to read.
 
 [ring-reitit-exception-middleware]: https://cljdoc.org/d/metosin/reitit/0.5.15/doc/ring/exception-handling-with-ring#exceptioncreate-exception-middleware
+
+#### `duct.reitit/cross-origin`
+
+Cross-origin resource sharing configuration, In development, the origin
+will always be a wildcard as the example above.
+valid keys: `:headers, :origin, :methods`
+
 ### Overview
 
 `duct.module/reitit` needs the following keys to resolve registry entries or inline symbols:
