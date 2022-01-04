@@ -8,22 +8,23 @@
 (def ^:private base-config
   {:duct.core/handler-ns 'handler
    :duct.core/middleware-ns 'middleware
-   ::exception {:log?  true}
    ::environment {}
    ::middleware []
    ::muuntaja true
-   ::coercion nil})
+   ::coercion nil
+   ::logging {:types [:exception]
+              :pretty? false :logger nil}})
    ; ::logger (m/displace (ig/ref :duct/logger))})
 
 (def ^:private configs
   {:development
-   {::exception {:pretty? true}
-    ::coercion {:pretty? true}
+   {::logging {:pretty? true
+               :types [:coercion :requests]}
     ::muuntaja true
     ::cross-origin {:origin [#".*"] :methods [:get :post :delete :options]}}
    :production
-   {::exception {:pretty? false}
-    ::coercion {:pretty? false}}})
+   {::logging {:types ^:replace [:requests]
+               :pretty? false}}})
 
 (defn- merge-to-options [configs]
   (reduce-kv

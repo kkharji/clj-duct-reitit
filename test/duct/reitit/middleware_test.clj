@@ -120,25 +120,37 @@
           (is (not (str/includes? (:body requestc) "github"))))))
 
     (testing "Coercion Pretty Exception"
-      (let [middleware (new-middleware {:munntaja false :coercion {:pretty? true}})
+      (let [middleware (new-middleware {:munntaja false :coercion {} :logging {:pretty? true
+                                                                               :types [:coercion]}})
             app  (->> {:middleware middleware :environment environment}
                       (new-router routes)
                       (ring/ring-handler))
             request {:request-method :get :uri (str "/identity/company/users/tami")}]
+
+        (is (= [:reitit.ring.middleware.parameters/parameters
+                :duct.reitit.middleware/environment-middleware
+                :reitit.ring.middleware.exception/exception
+                :reitit.ring.coercion/coerce-request
+                :reitit.ring.coercion/coerce-response]
+               (mapv :name middleware))
+            "Shouldn't include coerce-exceptions")
+
         (is (str/includes? (with-out-str (app request)) "-- Spec failed --------------------")
             "Should only print to stdout and not return it")))))
 
 (deftest custom-error-handling
-  (let [exception {java.lang.NullPointerException (fn [_ r]
-                                                    {:status 500
-                                                     :cause "No parameters received"
-                                                     :uri (:uri r)})
-                   java.lang.ArithmeticException (fn [e r]
-                                                   {:status 500
-                                                    :cause (ex-message e)
-                                                    :data (:body-params r)
-                                                    :uri (:uri r)})}
-        middleware (new-middleware {:munntaja false :coercion nil :exception {:handlers exception}})
+  (let [exception {java.lang.NullPointerException
+                   (fn [_ r]
+                     {:status 500
+                      :cause "No parameters received"
+                      :uri (:uri r)})
+                   java.lang.ArithmeticException
+                   (fn [e r]
+                     {:status 500
+                      :cause (ex-message e)
+                      :data (:body-params r)
+                      :uri (:uri r)})}
+        middleware (new-middleware {:munntaja false :coercion nil :exception exception})
         router (new-router [["/math" (fn [{{:keys [lhs rhs]} :body-params}] (/ lhs rhs))]] {:middleware middleware})
         handler (ring/ring-handler router)
         math-response (handler {:request-method :get :uri "/math" :body-params {:lhs 5 :rhs 0}})
@@ -146,5 +158,3 @@
     (is (= "Divide by zero" (:cause math-response)))
     (is (= {:lhs 5, :rhs 0} (:data math-response)))
     (is (= "No parameters received" (:cause no-params-response)))))
-
-

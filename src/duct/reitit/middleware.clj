@@ -14,7 +14,7 @@
                    :id  (java.util.UUID/randomUUID)
                    :start-date (java.util.Date.)))))
 
-(defn- get-coercion-middleware [{:keys [pretty?] :as coercion}]
+(defn- get-coercion-middleware [coercion {:keys [pretty?] :as _logging}]
   (when coercion
     {:coerce-exceptions (when-not pretty? rcc/coerce-exceptions-middleware)
      :coerce-request rcc/coerce-request-middleware
@@ -27,8 +27,8 @@
   (->>  defaults (conj (or middleware [])) (apply concat) vec compact))
 
 (defmethod init-key :duct.reitit/middleware [_ options]
-  (let [{:keys [muuntaja middleware coercion]} options
-        {:keys [coerce-response coerce-request coerce-exceptions]} (get-coercion-middleware coercion)
+  (let [{:keys [muuntaja middleware coercion logging]} options
+        {:keys [coerce-response coerce-request coerce-exceptions]} (get-coercion-middleware coercion logging)
         format-middleware    (get-format-middleware muuntaja)
         exception-middleware (get-exception-middleware options)
         create-middleware (partial extend-middleware middleware)]

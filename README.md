@@ -47,8 +47,9 @@ Full configuration demo:
                           :get-author {} ;; init foo.handler/get-author
                           :divide {}} ;; init foo.handler/divide
 
-  ;; Logger to be used in reitit module.
-  :duct.reitit/logger      #ig/ref :duct/logger
+  :duct.reitit/logging  {:logger (ig/ref :duct/logger)  ;; Logger to be used in reitit module.
+                         :types [:exception :coercion]
+                         :pretty? true}
 
   ;; Whether to use muuntaja for formatting. default true, can be a modified instance of muuntaja.
   :duct.reitit/muuntaja   true
@@ -60,14 +61,10 @@ Full configuration demo:
   :duct.reitit/middleware   []
 
   ;; Exception handling configuration
-  :duct.reitit/exception  {:handlers #ig/ref :foo.handler/exceptions
-                           :log? true ;; default true.
-                           :pretty? true} ;; default in dev.
+  :duct.reitit/exception  #ig/ref :foo.handler/exceptions
 
   ;; Coercion configuration
-  :duct.reitit/coercion   {:enable true
-                           :coercer 'spec ; Coercer to be used
-                           :pretty? true  ; Whether to pretty print coercion errors
+  :duct.reitit/coercion   {:coercer 'spec ; Coercer to be used
                            :formater nil} ; Function that takes spec validation error map and format it
 
   ;; Cross-origin configuration, the following defaults in for dev profile
@@ -97,9 +94,16 @@ without requiring the user to define them outside the registry.
 <project-ns>.<handler-ns>[.<result key namespace>]/<result key name>
 ```
 
-#### `:duct.reitit/logger`
+#### `:duct.reitit/logging`
 
-Logger to be used in logging stuff. e.g. `duct/logger`. default nil
+Logger configuration
+
+- `:types`: A vector of types of logs to be logged.
+    - `:exception`: whether the exception should be logged.
+    - `:coercion`: whether the coercion errors should be logged.
+    - `:requests`: whether requests to the server should be logged. Default true in development environment.
+- `:logger`: the logger would be used for logging.
+- `:pretty?`: default true in development environment. Make logs easier to read.
 
 #### `:duct.reitit/muuntaja `
 
@@ -122,21 +126,14 @@ other default configurable ones like `:duct.reitit/coercion` and `:duct.reitit/e
 coercion configuration, default nil.
 
 - `:coercer`: either 'malli 'spec 'schema or a value for custom coercor. default nil
-- `:pretty?` whether to pretty print coercion spec errors. default in dev
 - `:formater` custom function to format the return body. default nil
 
 #### `:duct.reitit/exception`
 
-Exception Handling configuration
-
-- `:handlers`: basic wrapper around [ring-reitit-exception-middleware].
-  It expects a map of exception classes or
-  `reitit.ring.middleware.exception` keys like wrap or default, and a
-  function that takes `[exception request]`.
-- `:log?` whether to log exceptions. default true. If
-  `duct.reitit/logger`, then it will be used to log exceptions,
-  otherwise it would use pretty print.
-- `:pretty?` whether to make log exceptions easier to read.
+Handlers for exceptions thrown while handling routing. It is basic wrapper
+around [ring-reitit-exception-middleware]. It expects a map of exception
+classes or `reitit.ring.middleware.exception` keys like wrap or default, and a
+function that takes `[exception request]`.
 
 [ring-reitit-exception-middleware]: https://cljdoc.org/d/metosin/reitit/0.5.15/doc/ring/exception-handling-with-ring#exceptioncreate-exception-middleware
 

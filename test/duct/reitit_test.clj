@@ -8,7 +8,8 @@
             [reitit.ring :as ring]
             [reitit.core :as r]
             [fipp.clojure :refer [pprint]]
-            [duct.reitit.util :refer [to-edn spy]]))
+            [duct.reitit.util :refer [to-edn spy]]
+            [clojure.string :as str]))
 
 (core/load-hierarchy)
 
@@ -55,11 +56,13 @@
                   :duct.module/reitit {}}
             [_ in-options] (new-config-handling base)]
         (are [path value] (-> path in-options (= value))
-          [:exception :log?] true ;; log exception enabled by default
-          :muuntaja true          ;; Muuntaja formatting is enabled by default
-          :environment {}         ;; Empty Environment
-          :middleware []          ;; Empty Middleware
-          :coercion nil)))        ;; no :coercion configuration
+          [:logging :types] [:exception] ;; default types supported by default
+          [:logging :pretty?] false      ;; No pretty logging by default.
+          [:logging :logger] nil         ;; No logger by default.
+          :muuntaja true                 ;; Muuntaja formatting is enabled by default
+          :environment {}                ;; Empty Environment
+          :middleware []                 ;; Empty Middleware
+          :coercion nil)))               ;; no :coercion configuration
 
     (testing "Default Development Environment Options"
       (let [base {:duct.profile/dev {}
@@ -68,9 +71,9 @@
                   :duct.module/reitit {}}
             [_ in-options] (new-config-handling base [:duct.profile/dev])]
         (are [path value] (-> path in-options (= value))
-          [:exception :log?] true          ;; log exception enabled by default
-          [:exception :pretty?] true       ;; log exception enabled by default
-          [:coercion :pretty?] true        ;; log exception enabled by default
+          [:logging :types] [:exception :coercion :requests] ;; default types supported by default
+          [:logging :pretty?] true         ;; pretty logging by default.
+          [:logging :logger] nil           ;; No logger by default.
           :muuntaja true                   ;; Muuntaja formatting is enabled by default
           :environment {}                  ;; Empty Environment
           :middleware []                   ;; Empty Middleware
@@ -84,13 +87,13 @@
                   :duct.module/reitit {}}
             [_ in-options] (new-config-handling base [:duct.profile/prod])]
         (are [path value] (-> path in-options (= value))
-          [:exception :log?] true          ;; log exception enabled by default
-          [:exception :pretty?] false      ;; No pretty exceptions
-          [:coercion :pretty?] false       ;; log exception enabled by default
-          :muuntaja true                   ;; Muuntaja formatting is enabled by default
-          :environment {}                  ;; Empty Environment
-          :middleware []                   ;; Empty Middleware
-          :cross-origin nil)))))              ;; No Cross-origin
+          [:logging :types] [:requests] ;; default types supported by default
+          [:logging :pretty?] false     ;; No pretty logging by default.
+          [:logging :logger] nil        ;; No logger by default.
+          :muuntaja true                ;; Muuntaja formatting is enabled by default
+          :environment {}               ;; Empty Environment
+          :middleware []                ;; Empty Middleware
+          :cross-origin nil)))))        ;; No Cross-origin
 
 (derive :foo/database :duct/const)
 (derive :foo/index-path :duct/const)
@@ -123,8 +126,10 @@
                             :get-author {} ;; init foo.handler/get-author
                             :divide {}} ;; init foo.handler/divide
 
-    ;; Logger to be used in reitit module.
-    :duct.reitit/logger      (ig/ref :duct/logger)
+    ;; Logging Configuration
+    :duct.reitit/logging  {:logger (ig/ref :duct/logger)  ;; Logger to be used in reitit module.
+                           :types [:exception :coercion]
+                           :pretty? true}
 
     ;; Whether to use muuntaja for formatting. default true, can be a modified instance of muuntaja.
     :duct.reitit/muuntaja   true
@@ -136,14 +141,10 @@
     :duct.reitit/middleware   []
 
     ;; Exception handling configuration
-    :duct.reitit/exception  {:handlers (ig/ref :foo.handler/exceptions)
-                             :log? true ;; default true.
-                             :pretty? true} ;; default in dev.
+    :duct.reitit/exception  (ig/ref :foo.handler/exceptions)
 
     ;; Coercion configuration
-    :duct.reitit/coercion   {:enable true
-                             :coercer 'spec ; Coercer to be used
-                             :pretty? true ; Whether to pretty print coercion errors
+    :duct.reitit/coercion   {:coercer 'spec ; Coercer to be used
                              :formater nil} ; Function that takes spec validation error map and format it
 
     ;; Cross-origin configuration, the following defaults in for dev and local profile
@@ -180,10 +181,22 @@
     (testing "reitit ring handler"
       (let [handler (:duct.handler/root config)]
         (is (fn? handler))
-        (is (nil? (handler {:request-method :get :uri "/not-a-route"})))
-        (is (string? (:body (handler {:request-method :get :uri "/"}))))
-        (is (= "pong" (-> {:request-method :get :uri "/ping"} handler to-edn :message)))
-        (is (= 9 (-> {:request-method :post :uri "/plus" :body-params {:y 3 :x 6}} handler to-edn :total)))
-        (is (= 9 (-> {:request-method :get :uri "/plus" :query-params {:y 3 :x 6}} handler to-edn :total)))
-        (is (= "tami5" (-> {:request-method :get :uri "/author"} handler to-edn :author)))
-        (is (= "Divide by zero" (-> {:request-method :get :uri "/divide" :body-params {:y 0 :x 0}} handler to-edn :cause)))))))
+
+        (testing "Ring Routing"
+          (is (nil? (handler {:request-method :get :uri "/not-a-route"})))
+          (is (string? (:body (handler {:request-method :get :uri "/"}))))
+          (is (= "pong" (-> {:request-method :get :uri "/ping"} handler to-edn :message)))
+          (is (= 9 (-> {:request-method :post :uri "/plus" :body-params {:y 3 :x 6}} handler to-edn :total)))
+          (is (= 9 (-> {:request-method :get :uri "/plus" :query-params {:y 3 :x 6}} handler to-edn :total))))
+
+        (testing "Environment-Keys-Access"
+          (is (= "tami5" (-> {:request-method :get :uri "/author"} handler to-edn :author))))
+
+        (testing "Custom-Exception-handling"
+          ;; TODO: find away to test if logger logged :)
+          (is (= "Divide by zero" (-> {:request-method :get :uri "/divide" :body-params {:y 0 :x 0}} handler to-edn :cause))))
+
+        (testing "Coercion-Logging"
+          (let [request {:request-method :get :uri "/plus" :query-params {:y "str" :x 6}}]
+            (is (str/includes? (with-out-str (handler request)) "-- Spec failed --------------------")
+                "Should only print to stdout and not return it")))))))

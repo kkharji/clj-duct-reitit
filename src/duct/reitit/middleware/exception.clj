@@ -1,10 +1,11 @@
 (ns duct.reitit.middleware.exception
-  (:require [duct.reitit.util :refer [try-resolve-sym spy compact]]
+  (:require [duct.reitit.util :refer [try-resolve-sym spy compact member?]]
             [reitit.ring.middleware.exception :as exception :refer [default-handlers create-exception-middleware]]
             [duct.logger :as logger]
-            [clojure.pprint :as pprint]))
+            [clojure.pprint :as pprint]
+            [duct.reitit.util :as util]))
 
-(defn coercion-error-handler [status expound-printer _formatter]
+(defn get-coercion-error-handler [status expound-printer _formatter]
   (let [printer (expound-printer {:theme :figwheel-theme, :print-specs? false})
         handler (exception/create-coercion-handler status)]
     (if printer
@@ -14,12 +15,13 @@
       (fn [exception request] ;; TODO: format
         (handler exception request)))))
 
-(defn coercion-handlers [{:keys [pretty? formatter]}]
-  (let [printer (when pretty? (try-resolve-sym 'expound.alpha/custom-printer))]
+(defn coercion-handlers [{:keys [formatter]} {:keys [pretty? types]}]
+  (let [printer (when (and pretty? (member? types :coercion))
+                  (try-resolve-sym 'expound.alpha/custom-printer))]
     (when (or printer formatter)
       #:reitit.coercion
-       {:request-coercion (coercion-error-handler 400 printer formatter)
-        :response-coercion (coercion-error-handler 500 printer formatter)})))
+       {:request-coercion (get-coercion-error-handler 400 printer formatter)
+        :response-coercion (get-coercion-error-handler 500 printer formatter)})))
 
 (defn- with-default-exceptions [& handlers]
   (->> (cons default-handlers handlers)
@@ -40,19 +42,20 @@
                          (vec))}]
     (if pretty? (str "\n" (with-out-str (pprint/pprint log))) log)))
 
+(defn- get-exception-wrapper [{:keys [logger pretty?]}]
+  (fn [handler exception request]
+    (if logger
+      (logger/log logger :error (format-exception-log exception request pretty?))
+      (pprint/pprint (format-exception-log exception request false)))
+    (handler exception request)))
+
 (defn get-exception-middleware
   "Create custom exception middleware."
-  [{:keys [coercion exception logger]}]
-  (let [coercion-handlers (coercion-handlers coercion)]
+  [{:keys [coercion exception logging]}]
+  (let [coercion-handlers (coercion-handlers coercion logging)
+        exception-wrapper (when (member? (:types logging) :exception)
+                            {::exception/wrap (get-exception-wrapper logging)})]
     (with-default-exceptions
-      (:handlers exception)
+      exception
       coercion-handlers
-      (when (:log? exception)
-        {::exception/wrap
-         (fn [handler e request]
-           (if logger
-             (logger/log logger :error (format-exception-log e request (:pretty? exception)))
-             (pprint/pprint (format-exception-log e request false)))
-           (handler e request))}))))
-
-
+      exception-wrapper)))
