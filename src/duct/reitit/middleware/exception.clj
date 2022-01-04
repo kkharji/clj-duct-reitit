@@ -44,9 +44,10 @@
 
 (defn- get-exception-wrapper [{:keys [logger pretty?]}]
   (fn [handler exception request]
-    (if logger
-      (logger/log logger :error (format-exception-log exception request pretty?))
-      (pprint/pprint (format-exception-log exception request false)))
+    (when (and pretty? (not (str/includes? (ex-message exception) "coercion")))
+      (if logger
+        (logger/log logger :error (format-exception-log exception request pretty?))
+        (pprint/pprint (format-exception-log exception request false))))
     (handler exception request)))
 
 (defn get-exception-middleware
