@@ -26,7 +26,7 @@
           config (core/prep-config base)]
 
       ;; Reitit Module keys used for futher processing
-      (is (= [:options :middleware :registry]
+      (is (= [:options :registry :middleware :logging]
              (->> (keys config)
                   (filterv #(= "duct.reitit" (namespace %)))
                   (mapv #(keyword (name %))))))
@@ -56,7 +56,7 @@
                   :duct.module/reitit {}}
             [_ in-options] (new-config-handling base)]
         (are [path value] (-> path in-options (= value))
-          [:logging :types] [:exception] ;; default types supported by default
+          [:logging :exceptions?] true ;; default types supported by default
           [:logging :pretty?] false      ;; No pretty logging by default.
           [:logging :logger] nil         ;; No logger by default.
           :muuntaja true                 ;; Muuntaja formatting is enabled by default
@@ -71,7 +71,9 @@
                   :duct.module/reitit {}}
             [_ in-options] (new-config-handling base [:duct.profile/dev])]
         (are [path value] (-> path in-options (= value))
-          [:logging :types] [:exception :coercion :requests] ;; default types supported by default
+          [:logging :exceptions?] true ;; default types supported by default
+          [:logging :coercions?] true ;; default types supported by default
+          [:logging :requests?] true ;; default types supported by default
           [:logging :pretty?] true         ;; pretty logging by default.
           [:logging :logger] nil           ;; No logger by default.
           :muuntaja true                   ;; Muuntaja formatting is enabled by default
@@ -87,7 +89,9 @@
                   :duct.module/reitit {}}
             [_ in-options] (new-config-handling base [:duct.profile/prod])]
         (are [path value] (-> path in-options (= value))
-          [:logging :types] [:requests] ;; default types supported by default
+          [:logging :requests?] true     ;; default types supported by default
+          [:logging :coercions?] false ;; default types supported by default
+          [:logging :exceptions?] false ;; default types supported by default
           [:logging :pretty?] false     ;; No pretty logging by default.
           [:logging :logger] nil        ;; No logger by default.
           :muuntaja true                ;; Muuntaja formatting is enabled by default
@@ -98,74 +102,93 @@
 (derive :foo/database :duct/const)
 (derive :foo/index-path :duct/const)
 
-(def basic-config
+(def base-config
+  {:duct.core/project-ns 'foo
+
+   ;; Where should handlers keys be localated
+   :duct.core/handler-ns 'handler
+
+   ;; Where should middleware keys be located
+   :duct.core/middleware-ns 'middleware
+
+   ;; Routes Configuration
+   :duct.reitit/routes     [["/" :index]
+                            ["/author" :get-author]
+                            ["/ping" {:get {:handler :ping}}]
+                            ["/plus" {:post :plus/with-body
+                                      :get 'plus/with-query}]
+                            ["/divide" {:get :divide}]]
+
+   ;; Registry to find handlers and local and global middleware
+   :duct.reitit/registry  {:index {:path  (ig/ref :foo/index-path)} ;; init foo.handler/index with {:path}
+                           :ping  {:message "pong"} ;; init foo.handler/ping with {:message}
+                           :plus/with-body {} ;; init foo.handler.plus/with-body
+                           :get-author {} ;; init foo.handler/get-author
+                           :divide {}}    ;; init foo.handler/divide
+
+   ;; Enable exception handlers through a map of class/types and their response function
+   :duct.reitit/exception   (ig/ref :foo.handler/exceptions)
+   ;; System specific keys
+   :foo/database            [{:author "tami5"}]
+   :foo/index-path          "resources/index.html"
+   :foo.handler/exceptions  {}})
+
+(defn- with-base-config [config]
   {:duct.module/reitit {}
-   :duct.module/logging {:set-root-config? true}
-   :duct.profile/base
-   {:duct.core/project-ns 'foo
-    :duct.core/handler-ns 'handler ; default value
-    :duct.core/middleware-ns 'middleware ; default value
+   :duct.module/logging {}
+   :duct.profile/base (merge base-config config)})
 
-    :foo/database            [{:author "tami5"}]
-    :foo/index-path          "resources/index.html"
-    :foo.handler/exceptions  {}
-
-    :duct.logger/timbre      {:set-root-config? true :level :trace}
-
-    :duct.reitit/routes     [["/" :index]
-                             ["/author" :get-author]
-                             ["/ping" {:get {:handler :ping}}]
-                             ["/plus" {:post :plus/with-body
-                                       :get 'plus/with-query}]
-                             ["/divide" {:get :divide}]]
-
-    ;; Registry to find handlers and local and global middleware
-    :duct.reitit/registry  {:index {:path  (ig/ref :foo/index-path)} ;; init foo.handler/index with {:path}
-                            :ping  {:message "pong"} ;; init foo.handler/ping with {:message}
-                            :plus/with-body {} ;; init foo.handler.plus/with-body
-                            :get-author {} ;; init foo.handler/get-author
-                            :divide {}} ;; init foo.handler/divide
+(def reitit-module-config
+  {:duct.logger/timbre {:set-root-config? true :level :trace}
 
     ;; Logging Configuration
-    :duct.reitit/logging  {:logger (ig/ref :duct/logger)  ;; Logger to be used in reitit module.
-                           :types [:exception :coercion]
-                           :pretty? true}
+   :duct.reitit/logging  {:enable true
+                          :logger (ig/ref :duct/logger)  ;; Logger to be used in reitit module.
+                          :exceptions? true
+                          :coercions? true
+                          :pretty? true}
 
     ;; Whether to use muuntaja for formatting. default true, can be a modified instance of muuntaja.
-    :duct.reitit/muuntaja   true
+   :duct.reitit/muuntaja true
 
     ;; Keywords to be injected in requests for convenience.
-    :duct.reitit/environment  {:db (ig/ref :foo/database)}
+   :duct.reitit/environment {:db (ig/ref :foo/database)}
 
     ;; Global middleware to be injected. expected registry key only
-    :duct.reitit/middleware   []
+   :duct.reitit/middleware  []
 
     ;; Exception handling configuration
-    :duct.reitit/exception  (ig/ref :foo.handler/exceptions)
+   :duct.reitit/exception   (ig/ref :foo.handler/exceptions)
 
     ;; Coercion configuration
-    :duct.reitit/coercion   {:coercer 'spec ; Coercer to be used
-                             :formater nil} ; Function that takes spec validation error map and format it
+   :duct.reitit/coercion    {:enable true
+                             :coercer 'spec
+                             :with-formatted-message? true} ; Coercer to be used
 
     ;; Cross-origin configuration, the following defaults in for dev and local profile
-    :duct.reitit/cross-origin {:origin [#".*"] ;; What origin to allow.
-                               :methods [:get :post :delete :options]}}}) ;; Which methods to allow.
+   :duct.reitit/cross-origin {:origin [#".*"] ;; What origin to allow.
+                              :methods [:get :post :delete :options]}}) ;; Which methods to allow.
 
 (defn- routes [router]
   (reduce (fn [acc [k v]] (assoc acc k v)) {} (r/routes router)))
 
+(defn- init
+  "Takes reitit options and merge it to base-config for testing"
+  [config]
+  (-> config with-base-config core/prep-config  ig/init))
+
 (deftest module-test
-  (let [config (ig/init (core/prep-config  basic-config))]
-    (testing "should read without errors"
+  (let [config (-> reitit-module-config with-base-config core/prep-config ig/init)]
+    (testing "Init Result"
       (is (map? config)))
 
-    (testing "should merge registry's integrant keys"
+    (testing "Registry Merge"
       (are [x] (not= nil (x config))
         :foo.handler/ping
         :foo.handler/index
         :foo.handler.plus/with-body))
 
-    (testing "should initialized duct.router/reitit"
+    (testing "Resulting Router"
       (let [router (config :duct.router/reitit)
             routes (routes router)]
         (is (= :reitit.core/router (type router)))
@@ -178,7 +201,7 @@
           "/plus" [:data :post :handler]
           "/author" [:data :handler])))
 
-    (testing "reitit ring handler"
+    (testing "Resulting Ring Handler"
       (let [handler (:duct.handler/root config)]
         (is (fn? handler))
 
@@ -190,13 +213,53 @@
           (is (= 9 (-> {:request-method :get :uri "/plus" :query-params {:y 3 :x 6}} handler to-edn :total))))
 
         (testing "Environment-Keys-Access"
-          (is (= "tami5" (-> {:request-method :get :uri "/author"} handler to-edn :author))))
+          (is (= "tami5" (-> {:request-method :get :uri "/author"} handler to-edn :author))))))))
 
-        (testing "Custom-Exception-handling"
-          ;; TODO: find away to test if logger logged :)
-          (is (= "Divide by zero" (-> {:request-method :get :uri "/divide" :body-params {:y 0 :x 0}} handler to-edn :cause))))
+; (derive :duct.reitit :duct.reitit-test)
+(derive :duct.reitit/logging ::logging)
+(derive :duct.reitit/coercion ::coercion)
 
-        (testing "Coercion-Logging"
-          (let [request {:request-method :get :uri "/plus" :query-params {:y "str" :x 6}}]
-            (is (str/includes? (with-out-str (handler request)) "-- Spec failed --------------------")
-                "Should only print to stdout and not return it")))))))
+(defn- request [method uri req]
+  (merge req {:request-method method :uri uri}))
+
+(deftest module-behavior
+  (testing "Logging:"
+    (let [does-include* (fn [ptr] (fn [str] (str/includes? str ptr)))
+          spec-pretty?  (does-include* "-- Spec failed --------------------")
+          spec-compact? (does-include* "-- Spec failed --------------------")
+          ex-pretty?    (does-include* "-- Exception Thrown ----------------")
+          ex-compact?   (does-include* "Exception: :uri")
+          test-behavior (fn [method url extra-request-keys base cfg checkfn]
+                          (let [request (request method url extra-request-keys)
+                                handler (-> base (core/merge-configs cfg) init :duct.handler/root)]
+                            (->> request handler with-out-str checkfn)))]
+
+      (testing "Exception-Logging:"
+        (let [base {::logging {:enable true :pretty? false :logger nil :exception? true}}]
+          (are [checkfn cfg] (test-behavior :get "/divide" {:body-params {:y 0 :x 0}} base cfg checkfn)
+            ;; Enabled
+            ex-compact? {}
+            ;; Enabled + logger (cant' check or confirm that)
+            empty? {::logging {:logger (ig/ref :duct/logger)}}
+            ;; Enabled + Pretty
+            ex-pretty? {::logging {:pretty? true}}
+            ;; Disabled
+            empty? {::logging {:enable false}}
+            ;; Disabled through disabling
+            empty? {::logging {:exceptions? false}})))
+
+      (testing "Coercion-Logging:"
+        (let [base {::coercion {:enable true :coercer 'spec}
+                    ::logging  {:enable true :pretty? false :coercions? true}}]
+          (are [checkfn cfg] (test-behavior :get "/plus" {:query-params {:y "str" :x 0}} base cfg checkfn)
+            ;; Enabled
+            spec-compact? {}
+            ;; Enabled + logger (cant' check or confirm that)
+            empty? {::logging {:logger (ig/ref :duct/logger)}}
+            ;; Enabled + Pretty
+            spec-pretty? {::logging {:pretty? true}}
+            ;; Disabled Logging
+            empty? {::logging {:enable false}}
+            ;; Disabled Coercion Logging, loggs with exceptions handler instead
+            ex-pretty? {::logging {:pretty? true :exceptions? true :coercions? false}}))))))
+

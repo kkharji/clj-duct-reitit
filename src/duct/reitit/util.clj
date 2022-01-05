@@ -109,8 +109,10 @@
   credit: @thiru"
   [expr]
   `(let [evaled# ~expr]
-     (println (str '~expr " => "))
+     (println "SPY =>; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;")
+     (clojure.pprint/pprint '~expr)
      (clojure.pprint/pprint evaled#)
+     (println ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;")
      evaled#))
 
 (defn wrap-compile-middleware [f]

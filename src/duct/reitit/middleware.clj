@@ -1,11 +1,11 @@
 (ns duct.reitit.middleware
   "Construct Ring-Reitit Global Middleware"
   (:require [integrant.core :refer [init-key]]
-            [duct.reitit.util :refer [compact defm]]
-            [reitit.ring.coercion :as rcc]
+            [duct.reitit.util :refer [compact defm spy]]
             [reitit.ring.middleware.muuntaja :refer [format-middleware]]
             [reitit.ring.middleware.parameters :refer [parameters-middleware]]
-            [duct.reitit.middleware.exception :as exception :refer [get-exception-middleware]]))
+            [duct.reitit.middleware.exception :as exception]
+            [duct.reitit.middleware.coercion :as coercion]))
 
 ;; TODO: inject environment keys instead
 (defm environment-middleware [opts _ handler request]
@@ -14,30 +14,26 @@
                    :id  (java.util.UUID/randomUUID)
                    :start-date (java.util.Date.)))))
 
-(defn- get-coercion-middleware [coercion {:keys [pretty?] :as _logging}]
-  (when coercion
-    {:coerce-exceptions (when-not pretty? rcc/coerce-exceptions-middleware)
-     :coerce-request rcc/coerce-request-middleware
-     :coerce-response rcc/coerce-response-middleware}))
-
 (defn- get-format-middleware [muuntaja]
   (when muuntaja format-middleware))
 
-(defn- extend-middleware [middleware & defaults]
-  (->>  defaults (conj (or middleware [])) (apply concat) vec compact))
+(defn- create-middleware [extras]
+  (fn [& defaults]
+    (->> (conj extras defaults)
+         (apply concat)
+         (vec) (compact))))
 
-(defmethod init-key :duct.reitit/middleware [_ options]
-  (let [{:keys [muuntaja middleware coercion logging]} options
-        {:keys [coerce-response coerce-request coerce-exceptions]} (get-coercion-middleware coercion logging)
+(defmethod init-key :duct.reitit/middleware
+  [_ {:keys [logging] {:keys [muuntaja middleware coercion exception]} :options}]
+  (let [{:keys [coerce-response coerce-request coerce-exceptions]} (coercion/get-middleware coercion logging)
         format-middleware    (get-format-middleware muuntaja)
-        exception-middleware (get-exception-middleware options)
-        create-middleware (partial extend-middleware middleware)]
-    (create-middleware
-     parameters-middleware
-     environment-middleware
-     format-middleware
-     exception-middleware
-     coerce-exceptions
-     coerce-request
-     coerce-response)))
+        exception-middleware (exception/get-middleware logging coercion exception)
+        create-middleware    (create-middleware middleware)]
+    (create-middleware parameters-middleware
+                       environment-middleware
+                       format-middleware
+                       exception-middleware
+                       coerce-exceptions
+                       coerce-request
+                       coerce-response)))
 

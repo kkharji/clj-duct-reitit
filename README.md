@@ -48,7 +48,8 @@ Full configuration demo:
                           :divide {}} ;; init foo.handler/divide
 
   :duct.reitit/logging  {:logger (ig/ref :duct/logger)  ;; Logger to be used in reitit module.
-                         :types [:exception :coercion]
+                         :exceptions? true
+                         :coercions? true ;; true only if coercion is enabled.
                          :pretty? true}
 
   ;; Whether to use muuntaja for formatting. default true, can be a modified instance of muuntaja.
@@ -98,10 +99,9 @@ without requiring the user to define them outside the registry.
 
 Logger configuration
 
-- `:types`: A vector of types of logs to be logged.
-    - `:exception`: whether the exception should be logged.
-    - `:coercion`: whether the coercion errors should be logged.
-    - `:requests`: whether requests to the server should be logged. Default true in development environment.
+- `:exceptions?`: whether the exception should be logged.
+- `:coercions?`: whether the coercion errors should be logged.
+- `:requests?`: whether requests to the server should be logged. Default true in development environment.
 - `:logger`: the logger would be used for logging.
 - `:pretty?`: default true in development environment. Make logs easier to read.
 
