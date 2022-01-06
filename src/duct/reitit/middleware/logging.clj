@@ -3,7 +3,7 @@
             [duct.reitit.middleware.format :refer [ex-format]]
             [duct.logger :as logger]))
 
-(defmethod init-key :duct.reitit/logging
+(defmethod init-key :ffduct.reitit/logging
   [_ {{:keys [enable logger pretty? exceptions? coercions?] :as config} :logging}]
   (when (and enable (or exceptions? coercions?))
     (let [enabled    {:coercions? coercions? :exceptions? exceptions?}

@@ -1,18 +1,24 @@
 (ns duct.reitit.middleware.exception
   (:require [reitit.ring.middleware.exception :as exception :refer [create-exception-middleware default-handlers]]
-            [duct.reitit.middleware.coercion :as coercion]))
+            [duct.reitit.middleware.coercion :as coercion]
+            [duct.reitit.middleware.format :refer [ex-format]]
+            [duct.reitit.util :refer [spy]]))
 
-(defn- create-middleware [& handlers]
-  (->> (cons default-handlers handlers)
-       (apply merge)
-       (create-exception-middleware)))
+(defn ^:private get-exception-wrapper [log config]
+  (let [config (merge config {:with-req-info? true})]
+    (fn [handler exception request]
+      (log :error (ex-format exception request config))
+      (handler exception request))))
 
 (defn get-middleware
   "Create custom exception middleware."
-  [{:keys [enable ex-logger coercions? exceptions?]} coercion exception]
-  (let [should-wrap (or (and enable coercions?) (and enable ex-logger exceptions?))
-        coercion-handlers (coercion/get-exception-handler coercion coercions?)
-        exception-wrapper (when should-wrap {::exception/wrap ex-logger})]
-    (create-middleware exception-wrapper
-                       coercion-handlers
-                       exception)))
+  [{:keys [coercion exception log logging]}]
+  (let [{:keys [enable coercions? exceptions?]}  logging
+        should-wrap (or (and enable coercions?) (and enable exceptions?))
+        coercion-handlers (when coercions? (coercion/get-exception-handler coercion))
+        exception-wrapper (when should-wrap {::exception/wrap (get-exception-wrapper log logging)})
+        create-middleware #(create-exception-middleware (apply merge default-handlers %))]
+    (create-middleware
+     [exception-wrapper
+      coercion-handlers
+      exception])))

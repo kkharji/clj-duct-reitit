@@ -1,9 +1,9 @@
 (ns duct.reitit
   (:require [duct.core :as core :refer [merge-configs]]
-            [duct.core.merge :as m]
             [duct.reitit.handler]
             [duct.reitit.util :as util :refer [get-namespaces resolve-registry with-registry spy]]
-            [integrant.core :refer [init-key] :as ig]))
+            [integrant.core :refer [init-key] :as ig]
+            [duct.logger :as logger]))
 
 (def ^:private base-config
   {:duct.core/handler-ns 'handler
@@ -29,30 +29,36 @@
                :requests? true
                :pretty? false}}})
 
-(defn- merge-to-options [configs]
+(defn- merge-to-options [config]
   (reduce-kv
    (fn [acc k v]
      (if (= "duct.reitit" (namespace k))
        (assoc-in acc [::options (keyword (name k))] v)
        (assoc acc k v)))
-   {} configs))
+   {} config))
+
+(defmethod init-key ::log [_ {{:keys [enable logger pretty? exceptions? coercions?]} :logging}]
+  (when (and enable (or exceptions? coercions?))
+    (if (and logger (not pretty?))
+      (fn [level message]
+        (logger/log logger level message))
+      println)))
 
 (defmethod init-key :duct.module/reitit [_ _]
   (fn [{:duct.reitit/keys [registry routes]
-        :duct.core/keys [environment] :as config}]
+        :duct.core/keys [environment] :as user-config}]
     (let [env-config (or (configs environment) {})
-          config     (merge-to-options (merge-configs base-config env-config config))
+          config     (merge-to-options (merge-configs base-config env-config user-config))
           namespaces (get-namespaces config)
           registry   (resolve-registry namespaces registry)
-          regrefs    (reduce-kv (fn [m k v] (assoc m k (ig/ref (first v)))) {} registry)
           merge      (partial with-registry config registry)]
       (merge
-       {::logging           (ig/ref ::options)
-        ::middleware        {:options (ig/ref ::options) :logging (ig/ref ::logging)}
-        ::registry           regrefs
-        :duct.handler/root   {:options (ig/ref ::options) :router (ig/ref :duct.router/reitit)}
-        :duct.router/reitit  {:routes routes
-                              :middleware (ig/ref ::middleware)
-                              :registry (ig/ref ::registry)
-                              :options (ig/ref ::options)
-                              :namespaces namespaces}}))))
+       {::registry          (reduce-kv (fn [m k v] (assoc m k (ig/ref (first v)))) {} registry)
+        ::log               (ig/ref ::options)
+        :duct.handler/root  {:options (ig/ref ::options)
+                             :router (ig/ref :duct.router/reitit)}
+        :duct.router/reitit {:routes routes
+                             :log (ig/ref ::log)
+                             :registry (ig/ref ::registry)
+                             :options (ig/ref ::options)
+                             :namespaces namespaces}}))))

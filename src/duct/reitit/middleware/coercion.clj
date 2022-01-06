@@ -9,20 +9,18 @@
     (fn [exception request]
       (handler exception request))))
 
-   ;; should be nil when 1. logging is enabled and 2. customized message)
-(defn- get-coercion-exception [should-use]
-  (when-not should-use rcc/coerce-exceptions-middleware))
-
-(defn get-middleware
-  [{:keys [enable with-formatted-message?]}
-   {:keys [coercions? exceptions?]}]
-  (when enable
-    (let [with-exception (or coercions? exceptions? with-formatted-message?)]
-      {:coerce-exceptions (get-coercion-exception with-exception)
-       :coerce-request rcc/coerce-request-middleware
-       :coerce-response rcc/coerce-response-middleware})))
-
-(defn get-exception-handler [{:keys [with-formatted-message?] :as _config} enabled?]
-  (when (or enabled? with-formatted-message?)
+(defn get-exception-handler
+  [{:keys [with-formatted-message?] :as _coercion}]
+  (when with-formatted-message?
     {:reitit.coercion/request-coercion (get-coercion-exception-handler 400)
      :reitit.coercion/response-coercion (get-coercion-exception-handler 500)}))
+
+(defn get-middleware
+  [{{:keys [enable with-formatted-message?]} :coercion
+    {:keys [coercions? exceptions?]} :logging}]
+  (when enable
+    (let [with-exception (or coercions? exceptions? with-formatted-message?)]
+      [(when-not with-exception rcc/coerce-exceptions-middleware)
+       rcc/coerce-request-middleware
+       rcc/coerce-response-middleware])))
+

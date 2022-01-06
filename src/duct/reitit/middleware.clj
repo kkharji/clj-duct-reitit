@@ -1,7 +1,6 @@
 (ns duct.reitit.middleware
   "Construct Ring-Reitit Global Middleware"
-  (:require [integrant.core :refer [init-key]]
-            [duct.reitit.util :refer [compact defm spy]]
+  (:require [duct.reitit.util :refer [compact defm spy]]
             [reitit.ring.middleware.muuntaja :refer [format-middleware]]
             [reitit.ring.middleware.parameters :refer [parameters-middleware]]
             [duct.reitit.middleware.exception :as exception]
@@ -17,23 +16,19 @@
 (defn- get-format-middleware [muuntaja]
   (when muuntaja format-middleware))
 
-(defn- create-middleware [extras]
-  (fn [& defaults]
-    (->> (conj extras defaults)
-         (apply concat)
-         (vec) (compact))))
+(defn- merge-middlewares [{:keys [middleware] :as options}]
+  (let [coercion-middlewares  (coercion/get-middleware options)]
+    (fn [& defaults]
+      (-> (concat defaults coercion-middlewares middleware)
+          (vec)
+          (compact)))))
 
-(defmethod init-key :duct.reitit/middleware
-  [_ {:keys [logging] {:keys [muuntaja middleware coercion exception]} :options}]
-  (let [{:keys [coerce-response coerce-request coerce-exceptions]} (coercion/get-middleware coercion logging)
-        format-middleware    (get-format-middleware muuntaja)
-        exception-middleware (exception/get-middleware logging coercion exception)
-        create-middleware    (create-middleware middleware)]
-    (create-middleware parameters-middleware
+(defn create-router-middleware [{:keys [muuntaja] :as options}]
+  (let [format-middleware    (get-format-middleware muuntaja)
+        exception-middleware (exception/get-middleware options)
+        merge-middlewares    (merge-middlewares options)]
+    (merge-middlewares parameters-middleware
                        environment-middleware
                        format-middleware
-                       exception-middleware
-                       coerce-exceptions
-                       coerce-request
-                       coerce-response)))
+                       exception-middleware)))
 

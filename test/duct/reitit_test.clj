@@ -71,28 +71,28 @@
   (let [config (core/prep-config base-config)
         in-options (new-config-handling base-config)]
 
-      ;; Reitit Module keys used for futher processing
-    (is (->> (keys config)
-             (filterv #(= "duct.reitit" (namespace %)))
-             (mapv #(keyword (name %)))
-             (= [:options :registry :middleware :logging])))
+    ;; Reitit Module keys used for futher processing
+    (is (= [:options :registry :log]
+           (->> (keys config)
+                (filterv #(= "duct.reitit" (namespace %)))
+                (mapv #(keyword (name %))))))
 
     (are [key value] (= value (key config))
-        ;; Defaulhandler middleware namespace
+      ;; Defaulhandler middleware namespace
       :duct.core/handler-ns    'handler
-        ;; Default middleware namespace
+      ;; Default middleware namespace
       :duct.core/middleware-ns 'middleware
-        ;; Configuration Pass it reitit router to initialize it
+      ;; Configuration Pass it reitit router to initialize it
       :duct.router/reitit      {:routes nil,
-                                :middleware (ig/ref :duct.reitit/middleware)
+                                :log (ig/ref :duct.reitit/log)
                                 :registry (ig/ref :duct.reitit/registry)
                                 :options (ig/ref :duct.reitit/options)
                                 :namespaces ["foo.handler" "foo.middleware"]}
-        ;; Configuration Pass it ring handler to initialize it
+      ;; Configuration Pass it ring handler to initialize it
       :duct.handler/root       {:router (ig/ref :duct.router/reitit)
                                 :options (ig/ref :duct.reitit/options)})
 
-      ;; Configuration Values
+    ;; Configuration Values
     (are [path value] (= (in-options path) value)
       [:logging :exceptions?] true ;; default types supported by default
       [:logging :pretty?] false      ;; No pretty logging by default.
@@ -106,9 +106,9 @@
   (let [in-options (-> (assoc base-config :duct.profile/dev {})
                        (new-config-handling [:duct.profile/dev]))]
     (are [path value] (= (in-options path) value)
-      [:logging :exceptions?] true ;; default types supported by default
-      [:logging :coercions?] true ;; default types supported by default
-      [:logging :requests?] true ;; default types supported by default
+      [:logging :exceptions?] true     ;; exceptions enabled by default
+      [:logging :coercions?] true      ;; coercions enabled by default
+      [:logging :requests?] true       ;; requests enabled by default
       [:logging :pretty?] true         ;; pretty logging by default.
       [:logging :logger] nil           ;; No logger by default.
       :muuntaja true                   ;; Muuntaja formatting is enabled by default
@@ -129,7 +129,7 @@
       :muuntaja true                ;; Muuntaja formatting is enabled by default
       :environment {}               ;; Empty Environment
       :middleware []                ;; Empty Middleware
-      :cross-origin nil)))        ;; No Cross-origin
+      :cross-origin nil)))          ;; No Cross-origin
 
 (deftest test-foo-module
   (let [extra {::coercion {:enable true :coercer 'spec}}
@@ -138,13 +138,13 @@
         routes (routes router)
         handler (config :duct.handler/root)]
 
-    (testing "Registry Merge"
+    (testing "Registry-Merge:"
       (are [x] (not= nil (x config))
         :foo.handler/ping
         :foo.handler/index
         :foo.handler.plus/with-body))
 
-    (testing "Resulting Router"
+    (testing "Resulting-Router:"
       (is (= :reitit.core/router (type router)))
       (is (= 5 (count routes)))
       (is (vector? (-> (get routes "/") :environment :db)))
@@ -164,7 +164,7 @@
         :get "/plus"  {:query-params {:y 3 :x 6}} [:total] 9
         :get "/author" {} [:author] "tami5"))
 
-    (testing "Custom Error Handling Repsonse"
+    (testing "Custom-Error-Repsonse:"
       (let [divide-by-zero-response (to-edn (handler (request :get "/divide" {:body-params {:y 0 :x 0}})))
             no-params-response (to-edn (handler (request :get "/divide" {})))]
 
@@ -173,7 +173,7 @@
         (is (= {:y 0 :x 0} (:data divide-by-zero-response)))
         (is (= "No parameters received" (:cause no-params-response)))))))
 
-(deftest module-behavior
+(deftest test-logging-behavior
   (testing "Logging:"
     (let [does-include* (fn [ptr] (fn [str] (str/includes? str ptr)))
           spec-pretty?  (does-include* "-- Spec failed --------------------")
@@ -186,7 +186,7 @@
                             (->> request handler with-out-str checkfn)))]
 
       (testing "Exception-Logging:"
-        (let [base {::logging {:enable true :pretty? false :logger nil :exception? true}}]
+        (let [base {::logging {:enable true :pretty? false :exception? true}}]
           (are [checkfn cfg] (test-behavior :get "/divide" {:body-params {:y 0 :x 0}} base cfg checkfn)
             ;; Enabled
             ex-compact? {}
