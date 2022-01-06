@@ -13,174 +13,130 @@
 
 (core/load-hierarchy)
 
-(defn- new-config-handling [base & [profiles]]
-  (let [config (core/build-config base profiles)
-        in-config (partial get-in config)
-        in-options #(in-config (cons :duct.reitit/options (if (vector? %) % [%])))]
-    [config in-options]))
-
-(deftest configuration-handling
-  (testing "Configuration keys and values"
-    (let [base {:duct.module/reitit {}
-                :duct.profile/base {:duct.core/project-ns 'foo}}
-          config (core/prep-config base)]
-
-      ;; Reitit Module keys used for futher processing
-      (is (= [:options :registry :middleware :logging]
-             (->> (keys config)
-                  (filterv #(= "duct.reitit" (namespace %)))
-                  (mapv #(keyword (name %))))))
-
-      (are [key value] (= value (key config))
-        ;; Defaulhandler middleware namespace
-        :duct.core/handler-ns    'handler
-
-        ;; Default middleware namespace
-        :duct.core/middleware-ns 'middleware
-
-        ;; Configuration Pass it reitit router to initialize it
-        :duct.router/reitit      {:routes nil,
-                                  :middleware (ig/ref :duct.reitit/middleware)
-                                  :registry (ig/ref :duct.reitit/registry)
-                                  :options (ig/ref :duct.reitit/options)
-                                  :namespaces ["foo.handler" "foo.middleware"]}
-
-        ;; Configuration Pass it ring handler to initialize it
-        :duct.handler/root       {:router (ig/ref :duct.router/reitit)
-                                  :options (ig/ref :duct.reitit/options)}))
-
-    (testing "Default Environment Options"
-      (let [base {:duct.profile/dev {}
-                  :duct.profile/base
-                  {:duct.core/project-ns 'foo}
-                  :duct.module/reitit {}}
-            [_ in-options] (new-config-handling base)]
-        (are [path value] (-> path in-options (= value))
-          [:logging :exceptions?] true ;; default types supported by default
-          [:logging :pretty?] false      ;; No pretty logging by default.
-          [:logging :logger] nil         ;; No logger by default.
-          :muuntaja true                 ;; Muuntaja formatting is enabled by default
-          :environment {}                ;; Empty Environment
-          :middleware []                 ;; Empty Middleware
-          :coercion nil)))               ;; no :coercion configuration
-
-    (testing "Default Development Environment Options"
-      (let [base {:duct.profile/dev {}
-                  :duct.profile/base
-                  {:duct.core/project-ns 'foo}
-                  :duct.module/reitit {}}
-            [_ in-options] (new-config-handling base [:duct.profile/dev])]
-        (are [path value] (-> path in-options (= value))
-          [:logging :exceptions?] true ;; default types supported by default
-          [:logging :coercions?] true ;; default types supported by default
-          [:logging :requests?] true ;; default types supported by default
-          [:logging :pretty?] true         ;; pretty logging by default.
-          [:logging :logger] nil           ;; No logger by default.
-          :muuntaja true                   ;; Muuntaja formatting is enabled by default
-          :environment {}                  ;; Empty Environment
-          :middleware []                   ;; Empty Middleware
-          [:cross-origin :methods] [:get :post :delete :options])  ;; Cross-origin methods
-        (is (= ".*" (str (in-options [:cross-origin :origin 0])))))) ;; Cross-origin origin allowed
-
-    (testing "Default Production Environment Options"
-      (let [base {:duct.profile/prod {}
-                  :duct.profile/base
-                  {:duct.core/project-ns 'foo}
-                  :duct.module/reitit {}}
-            [_ in-options] (new-config-handling base [:duct.profile/prod])]
-        (are [path value] (-> path in-options (= value))
-          [:logging :requests?] true     ;; default types supported by default
-          [:logging :coercions?] false ;; default types supported by default
-          [:logging :exceptions?] false ;; default types supported by default
-          [:logging :pretty?] false     ;; No pretty logging by default.
-          [:logging :logger] nil        ;; No logger by default.
-          :muuntaja true                ;; Muuntaja formatting is enabled by default
-          :environment {}               ;; Empty Environment
-          :middleware []                ;; Empty Middleware
-          :cross-origin nil)))))        ;; No Cross-origin
-
+(derive :duct.reitit/logging ::logging)
+(derive :duct.reitit/coercion ::coercion)
+(derive :duct.module/reitit ::module)
+(derive :duct.router/reitit ::router)
 (derive :foo/database :duct/const)
 (derive :foo/index-path :duct/const)
 
+(defn- new-config-handling [base & [profiles]]
+  (let [config (core/build-config base profiles)
+        in-config (partial get-in config)]
+    #(in-config (cons :duct.reitit/options (if (vector? %) % [%])))))
+
+(defn- request [method uri req]
+  (merge req {:request-method method :uri uri}))
+
+(defn- routes [router]
+  (reduce (fn [acc [k v]] (assoc acc k v)) {} (r/routes router)))
+
 (def base-config
-  {:duct.core/project-ns 'foo
+  {:duct.module/reitit {}
+   :duct.module/logging {}
+   :duct.profile/base {:duct.core/project-ns 'foo}})
 
-   ;; Where should handlers keys be localated
-   :duct.core/handler-ns 'handler
-
-   ;; Where should middleware keys be located
-   :duct.core/middleware-ns 'middleware
-
-   ;; Routes Configuration
-   :duct.reitit/routes     [["/" :index]
+(def test-config
+  {:duct.core/project-ns    'foo
+   :duct.core/handler-ns    'handler ;; Where should handlers keys be localated
+   :duct.core/middleware-ns 'middleware  ;; Where should middleware keys be located
+   :duct.reitit/routes     [["/" :index] ;; Routes Configuration
                             ["/author" :get-author]
                             ["/ping" {:get {:handler :ping}}]
                             ["/plus" {:post :plus/with-body
                                       :get 'plus/with-query}]
                             ["/divide" {:get :divide}]]
-
-   ;; Registry to find handlers and local and global middleware
    :duct.reitit/registry  {:index {:path  (ig/ref :foo/index-path)} ;; init foo.handler/index with {:path}
                            :ping  {:message "pong"} ;; init foo.handler/ping with {:message}
                            :plus/with-body {} ;; init foo.handler.plus/with-body
                            :get-author {} ;; init foo.handler/get-author
                            :divide {}}    ;; init foo.handler/divide
-
-   ;; Enable exception handlers through a map of class/types and their response function
    :duct.reitit/exception   (ig/ref :foo.handler/exceptions)
-   ;; System specific keys
+   :duct.reitit/environment {:db (ig/ref :foo/database)}
    :foo/database            [{:author "tami5"}]
    :foo/index-path          "resources/index.html"
    :foo.handler/exceptions  {}})
 
 (defn- with-base-config [config]
-  {:duct.module/reitit {}
-   :duct.module/logging {}
-   :duct.profile/base (merge base-config config)})
-
-(def reitit-module-config
-  {:duct.logger/timbre {:set-root-config? true :level :trace}
-
-    ;; Logging Configuration
-   :duct.reitit/logging  {:enable true
-                          :logger (ig/ref :duct/logger)  ;; Logger to be used in reitit module.
-                          :exceptions? true
-                          :coercions? true
-                          :pretty? true}
-
-    ;; Whether to use muuntaja for formatting. default true, can be a modified instance of muuntaja.
-   :duct.reitit/muuntaja true
-
-    ;; Keywords to be injected in requests for convenience.
-   :duct.reitit/environment {:db (ig/ref :foo/database)}
-
-    ;; Global middleware to be injected. expected registry key only
-   :duct.reitit/middleware  []
-
-    ;; Exception handling configuration
-   :duct.reitit/exception   (ig/ref :foo.handler/exceptions)
-
-    ;; Coercion configuration
-   :duct.reitit/coercion    {:enable true
-                             :coercer 'spec
-                             :with-formatted-message? true} ; Coercer to be used
-
-    ;; Cross-origin configuration, the following defaults in for dev and local profile
-   :duct.reitit/cross-origin {:origin [#".*"] ;; What origin to allow.
-                              :methods [:get :post :delete :options]}}) ;; Which methods to allow.
-
-(defn- routes [router]
-  (reduce (fn [acc [k v]] (assoc acc k v)) {} (r/routes router)))
+  (->> config
+       (merge test-config)
+       (assoc base-config :duct.profile/base)))
 
 (defn- init
   "Takes reitit options and merge it to base-config for testing"
   [config]
-  (-> config with-base-config core/prep-config  ig/init))
+  (-> config with-base-config core/prep-config ig/init))
 
-(deftest module-test
-  (let [config (-> reitit-module-config with-base-config core/prep-config ig/init)]
-    (testing "Init Result"
-      (is (map? config)))
+(deftest test-default-base-options
+  (let [config (core/prep-config base-config)
+        in-options (new-config-handling base-config)]
+
+      ;; Reitit Module keys used for futher processing
+    (is (->> (keys config)
+             (filterv #(= "duct.reitit" (namespace %)))
+             (mapv #(keyword (name %)))
+             (= [:options :registry :middleware :logging])))
+
+    (are [key value] (= value (key config))
+        ;; Defaulhandler middleware namespace
+      :duct.core/handler-ns    'handler
+        ;; Default middleware namespace
+      :duct.core/middleware-ns 'middleware
+        ;; Configuration Pass it reitit router to initialize it
+      :duct.router/reitit      {:routes nil,
+                                :middleware (ig/ref :duct.reitit/middleware)
+                                :registry (ig/ref :duct.reitit/registry)
+                                :options (ig/ref :duct.reitit/options)
+                                :namespaces ["foo.handler" "foo.middleware"]}
+        ;; Configuration Pass it ring handler to initialize it
+      :duct.handler/root       {:router (ig/ref :duct.router/reitit)
+                                :options (ig/ref :duct.reitit/options)})
+
+      ;; Configuration Values
+    (are [path value] (= (in-options path) value)
+      [:logging :exceptions?] true ;; default types supported by default
+      [:logging :pretty?] false      ;; No pretty logging by default.
+      [:logging :logger] nil         ;; No logger by default.
+      :muuntaja true                 ;; Muuntaja formatting is enabled by default
+      :environment {}                ;; Empty Environment
+      :middleware []                 ;; Empty Middleware
+      :coercion nil)))               ;; no :coercion configuration
+
+(deftest test-default-dev-options
+  (let [in-options (-> (assoc base-config :duct.profile/dev {})
+                       (new-config-handling [:duct.profile/dev]))]
+    (are [path value] (= (in-options path) value)
+      [:logging :exceptions?] true ;; default types supported by default
+      [:logging :coercions?] true ;; default types supported by default
+      [:logging :requests?] true ;; default types supported by default
+      [:logging :pretty?] true         ;; pretty logging by default.
+      [:logging :logger] nil           ;; No logger by default.
+      :muuntaja true                   ;; Muuntaja formatting is enabled by default
+      :environment {}                  ;; Empty Environment
+      :middleware []                   ;; Empty Middleware
+      [:cross-origin :methods] [:get :post :delete :options])  ;; Cross-origin methods
+    (is (= ".*" (str (in-options [:cross-origin :origin 0])))))) ;; Cross-origin origin allowed
+
+(deftest test-default-prod-options
+  (let [in-options (-> (assoc base-config :duct.profile/prod {})
+                       (new-config-handling [:duct.profile/prod]))]
+    (are [path value] (= (in-options path) value)
+      [:logging :requests?] true     ;; default types supported by default
+      [:logging :coercions?] false ;; default types supported by default
+      [:logging :exceptions?] false ;; default types supported by default
+      [:logging :pretty?] false     ;; No pretty logging by default.
+      [:logging :logger] nil        ;; No logger by default.
+      :muuntaja true                ;; Muuntaja formatting is enabled by default
+      :environment {}               ;; Empty Environment
+      :middleware []                ;; Empty Middleware
+      :cross-origin nil)))        ;; No Cross-origin
+
+(deftest test-foo-module
+  (let [extra {::coercion {:enable true :coercer 'spec}}
+        config (-> extra with-base-config core/prep-config ig/init)
+        router (config :duct.router/reitit)
+        routes (routes router)
+        handler (config :duct.handler/root)]
 
     (testing "Registry Merge"
       (are [x] (not= nil (x config))
@@ -189,38 +145,33 @@
         :foo.handler.plus/with-body))
 
     (testing "Resulting Router"
-      (let [router (config :duct.router/reitit)
-            routes (routes router)]
-        (is (= :reitit.core/router (type router)))
-        (is (= 5 (count routes)))
-        (is (vector? (-> (get routes "/") :environment :db)))
-        (are [route path] (fn? (get-in (r/match-by-path router route) path))
-          "/"     [:data :handler]
-          "/ping" [:data :get :handler]
-          "/plus" [:data :get :handler]
-          "/plus" [:data :post :handler]
-          "/author" [:data :handler])))
+      (is (= :reitit.core/router (type router)))
+      (is (= 5 (count routes)))
+      (is (vector? (-> (get routes "/") :environment :db)))
+      (are [route path] (fn? (get-in (r/match-by-path router route) path))
+        "/"     [:data :handler]
+        "/ping" [:data :get :handler]
+        "/plus" [:data :get :handler]
+        "/plus" [:data :post :handler]
+        "/author" [:data :handler])
 
-    (testing "Resulting Ring Handler"
-      (let [handler (:duct.handler/root config)]
-        (is (fn? handler))
+      (is (nil? (handler {:request-method :get :uri "/not-a-route"})))
 
-        (testing "Ring Routing"
-          (is (nil? (handler {:request-method :get :uri "/not-a-route"})))
-          (is (string? (:body (handler {:request-method :get :uri "/"}))))
-          (is (= "pong" (-> {:request-method :get :uri "/ping"} handler to-edn :message)))
-          (is (= 9 (-> {:request-method :post :uri "/plus" :body-params {:y 3 :x 6}} handler to-edn :total)))
-          (is (= 9 (-> {:request-method :get :uri "/plus" :query-params {:y 3 :x 6}} handler to-edn :total))))
+      (are [method uri extra-req-params body-path val]
+           (-> (request method uri extra-req-params) handler to-edn (get-in body-path) (= val) is)
+        :get "/ping" {} [:message] "pong"
+        :post "/plus" {:body-params  {:y 3 :x 6}} [:total] 9
+        :get "/plus"  {:query-params {:y 3 :x 6}} [:total] 9
+        :get "/author" {} [:author] "tami5"))
 
-        (testing "Environment-Keys-Access"
-          (is (= "tami5" (-> {:request-method :get :uri "/author"} handler to-edn :author))))))))
+    (testing "Custom Error Handling Repsonse"
+      (let [divide-by-zero-response (to-edn (handler (request :get "/divide" {:body-params {:y 0 :x 0}})))
+            no-params-response (to-edn (handler (request :get "/divide" {})))]
 
-; (derive :duct.reitit :duct.reitit-test)
-(derive :duct.reitit/logging ::logging)
-(derive :duct.reitit/coercion ::coercion)
-
-(defn- request [method uri req]
-  (merge req {:request-method method :uri uri}))
+        (is (= "Divide by zero" (:cause divide-by-zero-response)))
+        (is (= {:y 0 :x 0} (:data divide-by-zero-response)))
+        (is (= {:y 0 :x 0} (:data divide-by-zero-response)))
+        (is (= "No parameters received" (:cause no-params-response)))))))
 
 (deftest module-behavior
   (testing "Logging:"
