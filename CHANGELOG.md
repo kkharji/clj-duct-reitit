@@ -1,6 +1,45 @@
 # 🔥 [Unreleased](https://github.com/tami5/clj-duct-reitit)
 
 
+### Dev
+
+
+<dl><dd><details><summary><a href="https://github.com/tami5/clj-duct-reitit/commit/663a8de930f1322f80cce4320fff53f348947339"><tt>663a8de</tt></a> ✨ Feature: Pretty print exceptions</summary><br />Wow I didn't except such an improvement
+  </details></dd></dl>
+
+### General
+
+
+- <a href="https://github.com/tami5/clj-duct-reitit/commit/6a8e8afc93157b1db44a82e8a4ba334dd21c03b8"><tt>6a8e8af</tt></a> ♻️ Refactor: Duct module structure
+### Logging
+
+
+<dl><dd><details><summary><a href="https://github.com/tami5/clj-duct-reitit/commit/4a693a1bbd06ba65bfbae5a13c3a88a7bbd3643e"><tt>4a693a1</tt></a> ♻️ Refactor: Total rewrite</summary><br />Unlike before where the user needs to specify a list of stuff to log,
+now each item need to be set to boolean individually. Not totally sure
+I'd keep this but at least tests are passing.
+  </details></dd></dl>
+
+
+<dl><dd><details><summary><a href="https://github.com/tami5/clj-duct-reitit/commit/e6772edb20af1babf4c71630336c9e34d453d19b"><tt>e6772ed</tt></a> ✨ Feature: Merge logging config into one submodule</summary><br />Mostly refactoring to make all logging configuration handled in a single
+submodule.<br /><br /><b>BREAKING</b>: Change in how coercion and exception logging is
+handled. Now to enable logging for exception or coercion, it should be
+passed in `#duct.reitit/logging{:types []}`
+  </details></dd></dl>
+
+
+<dl><dd><details><summary><a href="https://github.com/tami5/clj-duct-reitit/commit/5bd4d6bdac76583bdee0e22b1b8e43093b8570da"><tt>5bd4d6b</tt></a> 🌱 Enhancement: Skip logging with coercion errors</summary><br />With in coercion handler there is logging. However, this feels wrong
+because logging shouldn't be done there.
+  </details></dd></dl>
+
+### Tests
+
+
+- <a href="https://github.com/tami5/clj-duct-reitit/commit/daa0a83d15f68a3a7d13cca6789b44bfb9786c90"><tt>daa0a83</tt></a> ♻️ Refactor: Clean up tests
+
+
+# 🎉 [0.2.0](https://github.com/tami5/clj-duct-reitit/tree/0.2.0) - 2022-01-03
+
+
 ### Exceptions
 
 
