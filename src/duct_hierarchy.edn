@@ -1,6 +1,10 @@
-{:duct.router/reitit      [:duct/router]
- :duct.module/reitit      [:duct/module]
- :duct.reitit/registry    [:duct/const]
- :duct.core/handler-ns    [:duct/const]
+{:duct.core/handler-ns    [:duct/const]
  :duct.core/middleware-ns [:duct/const]
+ :duct.module/reitit      [:duct/module]
+
+ :duct.reitit/router      [:duct/router]
+ :duct.reitit/handler     [:duct/handler]
+ :duct.reitit/registry    [:duct/const]
  :duct.reitit/options     [:duct/const]}
+
+

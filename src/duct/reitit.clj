@@ -1,64 +1,54 @@
 (ns duct.reitit
   (:require [duct.core :as core :refer [merge-configs]]
+            [duct.lib.module :as module]
+            [duct.logger :as logger]
+            [duct.reitit.defaults :refer [reitit-module-defaults]]
             [duct.reitit.handler]
-            [duct.reitit.util :as util :refer [get-namespaces resolve-registry with-registry spy]]
-            [integrant.core :refer [init-key] :as ig]
-            [duct.logger :as logger]))
+            [duct.reitit.log]
+            [duct.reitit.util :as util :refer [get-namespaces resolve-key]]
+            [integrant.core :refer [init-key] :as ig]))
 
-(def ^:private base-config
-  {:duct.core/handler-ns 'handler
-   :duct.core/middleware-ns 'middleware
-   ::environment {}
-   ::middleware []
-   ::muuntaja true
-   ::coercion nil
-   ::logging {:exceptions? true
-              :pretty? false :logger nil}})
-   ; ::logger (m/displace (ig/ref :duct/logger))})
+(defn registry-resolve
+  "Resolve registry keys into a map of {k [resolve config]}"
+  [namespaces registry]
+  (letfn [(process [f] (reduce f {} registry))
+          (resolve [k] (resolve-key namespaces k))]
+    (process
+     (fn [acc [k v]]
+       (when-let [res (resolve k)]
+         (assoc acc k [res (or v {})]))))))
 
-(def ^:private configs
-  {:development
-   {::logging {:pretty? true
-               :coercions? true
-               :requests? true}
-    ::muuntaja true
-    ::cross-origin {:origin [#".*"] :methods [:get :post :delete :options]}}
-   :production
-   {::logging {:exceptions? false
-               :coercions? false
-               :requests? true
-               :pretty? false}}})
+(defn registry-tree
+  "Returns a config tree that should be merged in duct configuration map"
+  [registry]
+  (reduce-kv (fn [m _ v]
+               (assoc m (first v) (second v))) {} registry))
 
-(defn- merge-to-options [config]
-  (reduce-kv
-   (fn [acc k v]
-     (if (= "duct.reitit" (namespace k))
-       (assoc-in acc [::options (keyword (name k))] v)
-       (assoc acc k v)))
-   {} config))
+(defn- registry-references
+  "Returns a map of keys and their integrant reference."
+  [registry]
+  (reduce-kv (fn [m k v]
+               (assoc m k (ig/ref (first v)))) {} registry))
 
-(defmethod init-key ::log [_ {{:keys [enable logger pretty? exceptions? coercions?]} :logging}]
-  (when (and enable (or exceptions? coercions?))
-    (if (and logger (not pretty?))
-      (fn [level message]
-        (logger/log logger level message))
-      println)))
+(defn get-config
+  "Merge user configuration with default-configuration and
+  environment-default-configuration"
+  [user-config]
+  (let [profile-config (some-> user-config :duct.core/environment reitit-module-defaults)]
+    (merge-configs (reitit-module-defaults :base) profile-config user-config)))
 
 (defmethod init-key :duct.module/reitit [_ _]
-  (fn [{:duct.reitit/keys [registry routes]
-        :duct.core/keys [environment] :as user-config}]
-    (let [env-config (or (configs environment) {})
-          config     (merge-to-options (merge-configs base-config env-config user-config))
+  (fn [{:duct.reitit/keys [registry routes] :as user-config}]
+    (let [config     (get-config user-config)
           namespaces (get-namespaces config)
-          registry   (resolve-registry namespaces registry)
-          merge      (partial with-registry config registry)]
-      (merge
-       {::registry          (reduce-kv (fn [m k v] (assoc m k (ig/ref (first v)))) {} registry)
-        ::log               (ig/ref ::options)
-        :duct.handler/root  {:options (ig/ref ::options)
-                             :router (ig/ref :duct.router/reitit)}
-        :duct.router/reitit {:routes routes
-                             :log (ig/ref ::log)
-                             :registry (ig/ref ::registry)
-                             :options (ig/ref ::options)
-                             :namespaces namespaces}}))))
+          registry   (registry-resolve namespaces registry)]
+      (module/init
+       {:root  :duct.reitit
+        :config config
+        :extra [(registry-tree registry)]
+        :store  {:namespaces namespaces :routes routes}
+        :schema {::registry (registry-references registry)
+                 ::routes   [:routes :namespaces ::registry]
+                 ::router   [::routes ::options ::log]
+                 ::log      ::options
+                 ::handler  [::router ::options ::log]}}))))

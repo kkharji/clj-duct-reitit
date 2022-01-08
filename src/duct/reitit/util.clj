@@ -1,8 +1,7 @@
 (ns duct.reitit.util
   (:require [clojure.string :as str]
             [integrant.core :refer [init-key]]
-            [jsonista.core :as jsonista]
-            [duct.core :as duct]))
+            [jsonista.core :as jsonista]))
 
 (defn- qualify-key [key ns]
   (if (str/includes? (str key) "/")
@@ -38,25 +37,6 @@
            (ex-info {:data result})))
       (first result))))
 
-(defn resolve-registry
-  "Resolve registry keys into a map of {k [resolve config]}"
-  [namespaces registry]
-  (letfn [(process [f] (reduce f {} registry))
-          (resolve [k] (resolve-key namespaces k))]
-    (process
-     (fn [acc [k v]]
-       (when-let [res (resolve k)]
-         (assoc acc k [res (or v {})]))))))
-
-(defn with-registry
-  "Merge user registry integrant key with configuration in addition to other configs"
-  [config registry & configs]
-  (let [registry (reduce-kv (fn [m _ v] (assoc m (first v) (second v))) {} registry)]
-    (apply duct/merge-configs
-           (->> configs
-                (cons config)
-                (cons registry)))))
-
 (defn get-namespaces
   "Get and merge namespaces using :duct.core/project-ns, :duct.core/handler-ns, and :duct.core/middleware-ns"
   [config]
@@ -75,11 +55,6 @@
         (into [] (filter (complement nil?) coll))
         (map? coll)
         (into {} (filter #(and (seq %) ((comp not nil? second) %)) coll))))
-
-(defn get-environment
-  "Get environment from configuration"
-  [config options]
-  (:environment options (:duct.core/environment config :production)))
 
 (defn member?
   "same as contains?, but check if v is part of coll."
@@ -119,13 +94,19 @@
   (fn [opts _] (fn [handler] (fn [request] (f opts _ handler request)))))
 
 (defmacro defm [name args body]
-  `(let [fun# (fn ~args ~body)]
-     (def ~name
-       {:name ~(keyword (str *ns* "/" name))
-        :compile (wrap-compile-middleware fun#)})))
+  `(def ~name
+     {:name ~(keyword (str *ns* "/" name))
+      :compile (wrap-compile-middleware (fn ~args ~body))}))
 
 (comment
   (test #'resolve-key)
   (test #'get-namespaces)
   (test #'compact)
   (test #'member?))
+
+(defn new-uuid []
+  (java.util.UUID/randomUUID))
+
+(defn new-date []
+  (java.util.Date.))
+
