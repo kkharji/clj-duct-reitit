@@ -17,16 +17,16 @@
       [kind type])))
 
 (defmethod ex-format [:coercion :spec]
-  [exception request {:keys [_pretty? with-req-info? print-spec? coercions?]}]
+  [exception request {:keys [pretty? with-req-info? print-spec? coercions?]}]
   (when coercions?
     (let [problems (:problems (ex-data exception))
-          request-info (when with-req-info? (request/info request))]
+          request-info (when with-req-info? (request/info request pretty?))]
       (duct.reitit.format/coercion-pretty problems print-spec? request-info))))
 
 (defmethod ex-format [:exception nil]
   [exception request {:keys [pretty? with-req-info? exceptions?]}]
   (when exceptions?
-    (let [req-info   (when with-req-info? (request/info request))
+    (let [req-info   (when with-req-info? (request/info request pretty?))
           ex-trace   (format/trace-compact exception)
           ex-cause   (ex-cause exception)
           ex-message (ex-message exception)]

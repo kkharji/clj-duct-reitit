@@ -123,44 +123,74 @@
         (is (= {:y 0 :x 0} (:data divide-by-zero-response)))
         (is (= "No parameters received" (:cause no-params-response)))))))
 
-(deftest test-logging-behavior
-  (testing "Logging:"
-    (let [does-include* (fn [ptr] (fn [str] (str/includes? str ptr)))
-          spec-pretty?  (does-include* "-- Spec failed --------------------")
-          spec-compact? (does-include* "-- Spec failed --------------------")
-          ex-pretty?    (does-include* "-- Exception Thrown ----------------")
-          ex-compact?   (does-include* "Exception: :uri")
-          test-behavior (fn [method url extra-request-keys base cfg checkfn]
-                          (let [request (request method url extra-request-keys)
-                                handler (-> base (core/merge-configs cfg) with-base-config init-system :duct.reitit/handler)]
-                            (->> request handler with-out-str checkfn)))]
+(defn- req-with-cfg [{:keys [req-opts config with-str? testfn]}]
+  (let [request (apply request req-opts)
+        handler (-> config with-base-config init-system :duct.reitit/handler)]
+    (cond
+      (and with-str? testfn)
+      (->> request handler with-out-str testfn)
+      (true? with-str?)
+      (->> request handler with-out-str)
+      (fn? testfn)
+      (->> request handler testfn)
+      :else (->> request handler))))
 
-      (testing "Exception-Logging:"
-        (let [base {:duct.reitit/logging {:enable true :pretty? false :exception? true}}]
-          (are [checkfn cfg] (test-behavior :get "/divide" {:body-params {:y 0 :x 0}} base cfg checkfn)
-            ;; Enabled
-            ex-compact? {}
-            ;; Enabled + logger (cant' check or confirm that)
-            empty? {:duct.reitit/logging {:logger (ig/ref :duct/logger)}}
-            ;; Enabled + Pretty
-            ex-pretty? {:duct.reitit/logging {:pretty? true}}
-            ;; Disabled
-            empty? {:duct.reitit/logging {:enable false}}
-            ;; Disabled through disabling
-            empty? {:duct.reitit/logging {:exceptions? false}})))
+(defn does-include [ptr]
+  (fn [str] (str/includes? str ptr)))
 
-      (testing "Coercion-Logging:"
-        (let [base {:duct.reitit/coercion {:enable true :coercer 'spec}
-                    :duct.reitit/logging  {:enable true :pretty? false :coercions? true}}]
-          (are [checkfn cfg] (test-behavior :get "/plus" {:query-params {:y "str" :x 0}} base cfg checkfn)
-            ;; Enabled
-            spec-compact? {}
-            ;; Enabled + logger (cant' check or confirm that)
-            empty? {:duct.reitit/logging {:logger (ig/ref :duct/logger)}}
-            ;; Enabled + Pretty
-            spec-pretty? {:duct.reitit/logging {:pretty? true}}
-            ;; Disabled Logging
-            empty? {:duct.reitit/logging {:enable false}}
-            ;; Disabled Coercion Logging, loggs with exceptions handler instead
-            ex-pretty? {:duct.reitit/logging {:pretty? true :exceptions? true :coercions? false}}))))))
+(def spec-pretty?  (does-include "-- Spec failed --------------------"))
+(def spec-compact? (does-include "-- Spec failed --------------------"))
+(def ex-pretty?    (does-include "-- Exception Thrown ----------------"))
+(def ex-compact?   (does-include "Exception: :uri"))
+(defn cmerge [b e] (core/merge-configs b e))
 
+(deftest test-exception-logging
+  (let [base {:duct.reitit/logging {:enable true :pretty? false :exception? true}}
+        req-opts [:get "/divide" {:body-params {:y 0 :x 0}}]]
+    (are [testfn cfg] (req-with-cfg
+                       {:req-opts req-opts :config (cmerge base cfg) :tesfn testfn :with-str? true})
+      ;; Enabled
+      ex-compact? {}
+      ;; Enabled + logger (cant' check or confirm that)
+      empty? {:duct.reitit/logging {:logger (ig/ref :duct/logger)}}
+      ;; Enabled + Pretty
+      ex-pretty? {:duct.reitit/logging {:pretty? true}}
+      ;; Disabled
+      empty? {:duct.reitit/logging {:enable false}}
+      ;; Disabled through disabling
+      empty? {:duct.reitit/logging {:exceptions? false}})))
+
+(deftest test-coercion-logging
+  (let [base {:duct.reitit/coercion {:enable true :coercer 'spec}
+              :duct.reitit/logging  {:enable true :pretty? false :coercions? true}}
+        req-opts [:get "/plus" {:query-params {:y "str" :x 0}}]]
+    (are [testfn cfg] (req-with-cfg {:req-opts req-opts :config (cmerge base cfg) :testfn testfn :with-str? true})
+      ;; Enabled
+      spec-compact? {}
+      ;; Enabled + logger (cant' check or confirm that)
+      empty? {:duct.reitit/logging {:logger (ig/ref :duct/logger)}}
+      ;; Enabled + Pretty
+      spec-pretty? {:duct.reitit/logging {:pretty? true}}
+     ;; Disabled Logging
+      empty? {:duct.reitit/logging {:enable false}}
+      ;; Disabled Coercion Logging, loggs with exceptions handler instead
+      ex-pretty? {:duct.reitit/logging {:pretty? true :exceptions? true :coercions? false}})))
+
+(deftest  test-request-logging
+  (let [base {:duct.reitit/logging
+              {:exceptions? false :coercions? false :requests? true :level :report}}
+        data-format    (does-include "[:starting {:method")
+        pretty-format? (does-include "Starting Request")
+
+        req-opts [:get "/divide" {:body-params {:y 2 :x 2}}]]
+
+    (are [testfn cfg] (req-with-cfg
+                       {:req-opts req-opts :config (cmerge base cfg) :with-str? true :testfn testfn})
+      data-format {}
+      pretty-format? {:duct.reitit/logging {:pretty? true}}
+      pretty-format? {:duct.reitit/logging {:pretty? true :logger (ig/ref :duct/logger)}}
+      empty? {:duct.reitit/logging {:requests? false}})))
+
+    ; (request-with-config
+    ;  {:req-opts [:get "/divide" {:body-params {:y 2 :x 2}}]
+    ;   :config (core/merge-configs base #_{:duct.reitit/logging {:logger (ig/ref :duct/logger)}})})))

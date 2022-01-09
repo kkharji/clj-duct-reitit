@@ -23,4 +23,3 @@
       [(when-not with-exception rcc/coerce-exceptions-middleware)
        rcc/coerce-request-middleware
        rcc/coerce-response-middleware])))
-

@@ -93,10 +93,10 @@
 (defn wrap-compile-middleware [f]
   (fn [opts _] (fn [handler] (fn [request] (f opts _ handler request)))))
 
-(defmacro defm [name args body]
+(defmacro defm [name args & body]
   `(def ~name
      {:name ~(keyword (str *ns* "/" name))
-      :compile (wrap-compile-middleware (fn ~args ~body))}))
+      :compile (wrap-compile-middleware (fn ~args ~@body))}))
 
 (comment
   (test #'resolve-key)

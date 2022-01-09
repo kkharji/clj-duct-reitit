@@ -27,16 +27,20 @@
            :spec spec/coercion
            :schema schema/coercion}))
 
-(defn- get-router-middleware [{:keys [muuntaja middleware] :as options}]
-  (let [format-middleware     (when muuntaja format-middleware)
-        exception-middleware  (exception/get-middleware options)
-        coercion-middlewares  (coercion/get-middleware options)
-        default-middelwares   [custom/initialize-middleware
-                               custom/environment-middleware
-                               parameters-middleware
-                               format-middleware
-                               exception-middleware]]
-    (compact (vec (concat default-middelwares coercion-middlewares middleware)))))
+(defn- get-router-middleware [{:keys [muuntaja middleware logging] :as options}]
+  (let [format-middleware       (when muuntaja format-middleware)
+        exception-middleware    (exception/get-middleware options)
+        coercion-middlewares    (coercion/get-middleware options)
+        log-request-middleware  (when (:requests? logging) [custom/logger-request-middleware])
+        log-response-middleware (when (:requests? logging) [custom/logger-response-middleware])
+        default-middelwares     [parameters-middleware format-middleware exception-middleware]
+        conact-middleware       (fn [& handlers] (compact (vec (apply concat handlers))))]
+    (conact-middleware [custom/environment-middleware]
+                       log-request-middleware
+                       default-middelwares
+                       coercion-middlewares
+                       middleware
+                       log-response-middleware)))
 
 (defmethod init-key :duct.reitit/routes [_ {:keys [routes registry namespaces]}]
   (let [resolve-key (partial resolve-key namespaces)
@@ -53,6 +57,7 @@
         muuntaja    {:muuntaja (get-muuntaja (:muuntaja options))}
         coercion    {:coercion (get-coercion (:coercion options))}
         middleware  {:middleware (get-router-middleware (assoc options :log log))}
-        data [environment muuntaja coercion middleware]]
+        logger      {:logger (merge (:logging options) {:log log})}
+        data [environment muuntaja coercion middleware logger]]
     (ring/router routes {:data (compact (apply merge data))})))
 

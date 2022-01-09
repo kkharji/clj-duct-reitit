@@ -1,4 +1,4 @@
-# 🔥 [Unreleased](https://github.com/tami5/clj-duct-reitit)
+# 🎉 [0.3.0](https://github.com/tami5/clj-duct-reitit/tree/0.3.0) - 2022-01-09
 
 
 ### Dev
@@ -68,7 +68,7 @@ because logging shouldn't be done there.
 ### Readme
 
 
-- <a href="https://github.com/tami5/clj-duct-reitit/commit/6b2ce558004fee874be826adae9c405fc859b81f"><tt>6b2ce55</tt></a> 📚 Documentation: Update
+- <a href="https://github.com/tami5/clj-duct-reitit/commit/80c62d7463d49743f229b436d9c8437abd9566d1"><tt>80c62d7</tt></a> 📚 Documentation: Update
 ### Tests
 
 

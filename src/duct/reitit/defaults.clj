@@ -8,6 +8,7 @@
              :duct.reitit/muuntaja true
              :duct.reitit/coercion nil
              :duct.reitit/logging {:enable true
+                                   :level :report
                                    :exceptions? true
                                    :pretty? false}}
 
