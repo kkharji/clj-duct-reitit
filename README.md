@@ -64,7 +64,8 @@ Full configuration demo:
   ;; Global middleware to be injected. expected registry key only
   :duct.reitit/middleware   []
 
-  ;; Exception handling configuration
+  ;; Exception handling configuration. Auto-detected for
+  :foo.handler/exceptions and :foo.handler.exceptions/main
   :duct.reitit/exception  #ig/ref :foo.handler/exceptions
 
   ;; Coercion configuration
@@ -137,6 +138,10 @@ Handlers for exceptions thrown while handling routing. It is basic wrapper
 around [ring-reitit-exception-middleware]. It expects a map of exception
 classes or `reitit.ring.middleware.exception` keys like wrap or default, and a
 function that takes `[exception request]`.
+
+It will be auto-detected if the user have the exceptions handler
+defined in either `:project-ns.handler/exceptions`  or
+`:project-ns.handler.exceptions/main` integrant keys.
 
 [ring-reitit-exception-middleware]: https://cljdoc.org/d/metosin/reitit/0.5.15/doc/ring/exception-handling-with-ring#exceptioncreate-exception-middleware
 

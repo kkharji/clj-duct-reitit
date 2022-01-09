@@ -1,3 +1,49 @@
+# 🔥 [Unreleased](https://github.com/tami5/clj-duct-reitit)
+
+
+### Exceptions
+
+
+<dl><dd><details><summary><a href="https://github.com/tami5/clj-duct-reitit/commit/d5c2be889afce888534b503080bd8c26a706e5a1"><tt>d5c2be8</tt></a> ✨ Feature: Auto-detect user exceptions handler</summary><br />When user defined `project-ns.handler/exceptions` or
+`project.ns.handler.exceptions/main` it should auto-detected and set it
+  </details></dd></dl>
+
+### Logging
+
+
+<dl><dd><details><summary><a href="https://github.com/tami5/clj-duct-reitit/commit/a7f3d6b0956d5ab25a94f37e9f294a1179c08fce"><tt>a7f3d6b</tt></a> ✨ Feature: Support request logging</summary><br />Example Output:
+
+Pretty Mode:
+
+~~~clojure
+Starting Request ------------------------
+
+Request Time: 10:53:27
+Request Method: "GET"
+Request URI: "/divide"
+Request Params: {:body {:y 2, :x 2}}
+
+-----------------------------------------
+
+Finishing Request ------------------------
+
+Request Method: "GET"
+Request URI: "/divide"
+Request Duration: 0 ms
+
+------------------------------------------
+~~~
+
+Compact Mode:
+
+~~~clojure
+[:starting {:method GET, :uri /divide, :params {:body {:y 2, :x 2}}}]
+[:completed {:method GET, :uri /divide, :completed-in 0}]
+~~~
+  </details></dd></dl>
+
+
+
 # 🎉 [0.3.0](https://github.com/tami5/clj-duct-reitit/tree/0.3.0) - 2022-01-09
 
 

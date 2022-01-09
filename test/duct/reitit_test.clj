@@ -8,7 +8,8 @@
             [duct.test-helpers :refer [base-config init-system request with-base-config test-options routes]]
             [reitit.core :as r]
             [duct.reitit.util :refer [to-edn spy]]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [medley.core :refer [dissoc-in]]))
 
 (core/load-hierarchy)
 
@@ -122,6 +123,10 @@
         (is (= {:y 0 :x 0} (:data divide-by-zero-response)))
         (is (= {:y 0 :x 0} (:data divide-by-zero-response)))
         (is (= "No parameters received" (:cause no-params-response)))))))
+
+(deftest test-auto-exception-handlers-detection
+  (let [system (init-system (dissoc-in (with-base-config {}) [:duct.profile/base :duct.reitit/exception]))]
+    (is (get-in system [:duct.reitit/options :exception]))))
 
 (defn- req-with-cfg [{:keys [req-opts config with-str? testfn]}]
   (let [request (apply request req-opts)

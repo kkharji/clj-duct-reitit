@@ -5,7 +5,7 @@
             [duct.reitit.defaults :refer [reitit-module-defaults]]
             [duct.reitit.handler]
             [duct.reitit.log]
-            [duct.reitit.util :as util :refer [get-namespaces resolve-key]]
+            [duct.reitit.util :as util :refer [get-namespaces resolve-key spy]]
             [integrant.core :refer [init-key] :as ig]))
 
 (defn registry-resolve
@@ -37,15 +37,23 @@
   (let [profile-config (some-> user-config :duct.core/environment reitit-module-defaults)]
     (merge-configs (reitit-module-defaults :base) profile-config user-config)))
 
+(defn ^:private auto-detect-exception [namespaces config]
+  (let [as-handler (keyword (first namespaces) "exceptions")
+        as-main (keyword (str (first namespaces) ".exceptions") "main")
+        handler-ref (when (config as-handler) (ig/ref as-handler))
+        main-ref (when (config as-main) (ig/ref as-main))]
+    {::options {:exception (or handler-ref main-ref)}}))
+
 (defmethod init-key :duct.module/reitit [_ _]
-  (fn [{:duct.reitit/keys [registry routes] :as user-config}]
+  (fn [{:duct.reitit/keys [registry routes exception] :as user-config}]
     (let [config     (get-config user-config)
           namespaces (get-namespaces config)
           registry   (registry-resolve namespaces registry)]
       (module/init
        {:root  :duct.reitit
         :config config
-        :extra [(registry-tree registry)]
+        :extra [(registry-tree registry)
+                (when-not exception (auto-detect-exception namespaces config))]
         :store  {:namespaces namespaces :routes routes}
         :schema {::registry (registry-references registry)
                  ::routes   [:routes :namespaces ::registry]
