@@ -37,12 +37,17 @@
   (let [profile-config (some-> user-config :duct.core/environment reitit-module-defaults)]
     (merge-configs (reitit-module-defaults :base) profile-config user-config)))
 
-(defn ^:private auto-detect-exception [namespaces config]
-  (let [as-handler (keyword (first namespaces) "exceptions")
-        as-main (keyword (str (first namespaces) ".exceptions") "main")
-        handler-ref (when (config as-handler) (ig/ref as-handler))
-        main-ref (when (config as-main) (ig/ref as-main))]
-    {::options {:exception (or handler-ref main-ref)}}))
+(defn ^:private auto-detect-exception
+  "Auto detect custom exception handlers when duct.retit/exception is nil and
+  either `project-ns.handler/exceptions` or `project-ns.handler.exceptions/main` is defined.
+  Returns modfications to apply on config "
+  [exception namespaces config]
+  (when-not exception
+    (let [as-handler (keyword (first namespaces) "exceptions")
+          as-main (keyword (str (first namespaces) ".exceptions") "main")
+          handler-ref (when (config as-handler) (ig/ref as-handler))
+          main-ref (when (config as-main) (ig/ref as-main))]
+      {::options {:exception (or handler-ref main-ref)}})))
 
 (defmethod init-key :duct.module/reitit [_ _]
   (fn [{:duct.reitit/keys [registry routes exception] :as user-config}]
@@ -53,7 +58,7 @@
        {:root  :duct.reitit
         :config config
         :extra [(registry-tree registry)
-                (when-not exception (auto-detect-exception namespaces config))]
+                (auto-detect-exception exception namespaces config)]
         :store  {:namespaces namespaces :routes routes}
         :schema {::registry (registry-references registry)
                  ::routes   [:routes :namespaces ::registry]

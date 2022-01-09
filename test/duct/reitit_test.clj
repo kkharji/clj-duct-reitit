@@ -47,10 +47,10 @@
       :muuntaja true                 ;; Muuntaja formatting is enabled by default
       :environment {}                ;; Empty Environment
       :middleware []                 ;; Empty Middleware
-      :coercion nil                  ;; no :coercion configuration
       [:logging :exceptions?] true   ;; default types supported by default
       [:logging :pretty?] false      ;; No pretty logging by default.
-      [:logging :logger] nil)))      ;; No logger by default.
+      [:logging :logger] nil      ;; No logger by default.
+      :coercion {:with-formatted-message? true})))
 
 (deftest test-default-dev-options
   ;; Reitit Module keys using default base + default dev options
@@ -65,7 +65,8 @@
       :muuntaja true                   ;; Muuntaja formatting is enabled by default
       :environment {}                  ;; Empty Environment
       :middleware []                   ;; Empty Middleware
-      [:cross-origin :methods] [:get :post :delete :options])  ;; Cross-origin methods
+      [:cross-origin :methods] [:get :post :delete :options]  ;; Cross-origin methods
+      :coercion {:with-formatted-message? true})
     (is (= ".*" (str (get-in-options [:cross-origin :origin 0])))))) ;; Cross-origin origin allowed
 
 (deftest test-default-prod-options
@@ -80,7 +81,8 @@
       [:logging :coercions?] false  ;; default types supported by default
       [:logging :exceptions?] false ;; default types supported by default
       [:logging :pretty?] false     ;; No pretty logging by default.
-      [:logging :logger] nil)))        ;; No logger by default.
+      [:logging :logger] nil        ;; No logger by default.
+      :coercion {:with-formatted-message? true})))
 
 (deftest test-foo-module
   (let [extra {:duct.reitit/coercion {:enable true :coercer 'spec}}
@@ -125,8 +127,24 @@
         (is (= "No parameters received" (:cause no-params-response)))))))
 
 (deftest test-auto-exception-handlers-detection
-  (let [system (init-system (dissoc-in (with-base-config {}) [:duct.profile/base :duct.reitit/exception]))]
+  (let [system (->> [:duct.profile/base :duct.reitit/exception]
+                    (dissoc-in (with-base-config {}))
+                    (init-system))]
     (is (get-in system [:duct.reitit/options :exception]))))
+
+(deftest test-pretty-coercion-response
+  (let [system (->> {:duct.reitit/muuntaja false
+                     :duct.reitit/coercion
+                     {:with-formatted-message? true
+                      :enable true
+                      :coercer 'spec}}
+                    with-base-config
+                    init-system)
+        handler (:duct.reitit/handler system)]
+    (is (-> {:request-method :get :uri "/plus" :query-params {:y "str" :x 5}}
+            (handler)
+            (:message)
+            (str/includes? "-- Spec failed")))))
 
 (defn- req-with-cfg [{:keys [req-opts config with-str? testfn]}]
   (let [request (apply request req-opts)

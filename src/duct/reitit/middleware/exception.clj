@@ -21,7 +21,7 @@
   (when coercions?
     (let [problems (:problems (ex-data exception))
           request-info (when with-req-info? (request/info request pretty?))]
-      (duct.reitit.format/coercion-pretty problems print-spec? request-info))))
+      (format/coercion-pretty problems print-spec? request-info))))
 
 (defmethod ex-format [:exception nil]
   [exception request {:keys [pretty? with-req-info? exceptions?]}]
@@ -48,5 +48,5 @@
         create-middleware #(create-exception-middleware (apply merge default-handlers %))]
     (create-middleware
      [(when should-wrap {::exception/wrap (get-exception-wrapper log logging)})
-      (when coercions? (coercion/get-exception-handler coercion))
+      (when (coercion :with-formatted-message?) (coercion/get-exception-handler coercion))
       exception])))

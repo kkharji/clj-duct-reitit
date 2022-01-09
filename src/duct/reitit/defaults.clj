@@ -6,11 +6,10 @@
              :duct.reitit/environment {}
              :duct.reitit/middleware []
              :duct.reitit/muuntaja true
-             :duct.reitit/coercion nil
-             :duct.reitit/logging {:enable true
-                                   :level :report
-                                   :exceptions? true
-                                   :pretty? false}}
+             :duct.reitit/coercion {:with-formatted-message? true}
+             :duct.reitit/logging  {:level :report
+                                    :exceptions? true
+                                    :pretty? false}}
 
    :development {:duct.reitit/logging
                  {:pretty? true :coercions? true :requests? true}

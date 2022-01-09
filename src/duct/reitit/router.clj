@@ -14,18 +14,18 @@
             [duct.reitit.middleware.coercion :as coercion]
             [duct.reitit.middleware.custom :as custom]))
 
-(defn- get-muuntaja
-  "Returns muuntaja instance, when boolean use the default one, otherwise x"
-  [x]
-  (when x (if (boolean? x) muuntaja-instance x)))
+(def ^:private coercers
+  {:malli malli/coercion :spec spec/coercion :schema schema/coercion})
 
 (defn- get-coercion
   "Returns coercion coercion is non-nil and coercer is defiend"
   [coercion]
-  (some-> coercion :coercer keyword
-          {:malli malli/coercion
-           :spec spec/coercion
-           :schema schema/coercion}))
+  (some-> coercion :coercer keyword coercers))
+
+(defn- get-muuntaja
+  "Returns muuntaja instance, when boolean use the default one, otherwise x"
+  [x]
+  (when x (if (boolean? x) muuntaja-instance x)))
 
 (defn- get-router-middleware [{:keys [muuntaja middleware logging] :as options}]
   (let [format-middleware       (when muuntaja format-middleware)
