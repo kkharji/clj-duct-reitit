@@ -1,7 +1,7 @@
 (ns duct.reitit.router
   (:require [clojure.walk :refer [postwalk]]
             [duct.logger :as logger]
-            [duct.reitit.util :as util :refer [compact member? resolve-key]]
+            [duct.reitit.util :as util :refer [compact member? resolve-key spy]]
             [integrant.core :as ig :refer [init-key]]
             [muuntaja.core :refer [instance] :rename {instance muuntaja-instance}]
             [reitit.coercion.malli :as malli]
@@ -12,7 +12,8 @@
             [reitit.ring.middleware.parameters :refer [parameters-middleware]]
             [duct.reitit.middleware.exception :as exception]
             [duct.reitit.middleware.coercion :as coercion]
-            [duct.reitit.middleware.custom :as custom]))
+            [duct.reitit.middleware.custom :as custom]
+            [ring.middleware.cors :refer [wrap-cors]]))
 
 (def ^:private coercers
   {:malli malli/coercion :spec spec/coercion :schema schema/coercion})
@@ -27,13 +28,23 @@
   [x]
   (when x (if (boolean? x) muuntaja-instance x)))
 
-(defn- get-router-middleware [{:keys [muuntaja middleware logging] :as options}]
+(defn- get-cors-middleware
+  "Creates reitit cross-origin middleware."
+  [arguments]
+  (let [to-key  (fn [k] (keyword (str "access-control-allow-" (name k))))
+        arguments (apply concat (reduce-kv #(assoc %1 (to-key %2) %3) {} arguments))]
+    {:name ::cors
+     :wrap (fn [handler]
+             (apply wrap-cors handler arguments))}))
+
+(defn- get-router-middleware [{:keys [cross-origin muuntaja middleware logging] :as options}]
   (let [format-middleware       (when muuntaja format-middleware)
         exception-middleware    (exception/get-middleware options)
         coercion-middlewares    (coercion/get-middleware options)
         log-request-middleware  (when (:requests? logging) [custom/logger-request-middleware])
         log-response-middleware (when (:requests? logging) [custom/logger-response-middleware])
-        default-middelwares     [parameters-middleware format-middleware exception-middleware]
+        cors-middleware         (when cross-origin (get-cors-middleware cross-origin))
+        default-middelwares     [parameters-middleware cors-middleware format-middleware exception-middleware]
         conact-middleware       (fn [& handlers] (compact (vec (apply concat handlers))))]
     (conact-middleware [custom/environment-middleware]
                        log-request-middleware

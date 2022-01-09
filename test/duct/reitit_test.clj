@@ -146,6 +146,31 @@
             (:message)
             (str/includes? "-- Spec failed")))))
 
+(deftest test-cors-middleware
+  (let [system (->> {:duct.reitit/muuntaja false
+                     :duct.reitit/cross-origin {:methods [:get :post] :origin [#"http://example.com"]}}
+                    with-base-config
+                    init-system)
+        handler (:duct.reitit/handler system)]
+    (is (= (handler
+            {:request-method :options
+             :uri "/author"
+             :headers {"origin" "http://example.com"
+                       "access-control-request-method" "POST"
+                       "access-control-request-headers" "Accept, Content-Type"}})
+           {:status 200,
+            :headers {"Access-Control-Allow-Methods" "GET, POST",
+                      "Access-Control-Allow-Origin" "http://example.com",
+                      "Access-Control-Allow-Headers" "Accept, Content-Type"},
+            :body "preflight complete"}))
+
+    (is (not= (-> {:request-method :options
+                   :uri "/author"
+                   :headers {"origin" "https://go.vm"}}
+                  (handler)
+                  (:body))
+              "preflight complete"))))
+
 (defn- req-with-cfg [{:keys [req-opts config with-str? testfn]}]
   (let [request (apply request req-opts)
         handler (-> config with-base-config init-system :duct.reitit/handler)]
@@ -199,7 +224,7 @@
       ;; Disabled Coercion Logging, loggs with exceptions handler instead
       ex-pretty? {:duct.reitit/logging {:pretty? true :exceptions? true :coercions? false}})))
 
-(deftest  test-request-logging
+(deftest test-request-logging
   (let [base {:duct.reitit/logging
               {:exceptions? false :coercions? false :requests? true :level :report}}
         data-format    (does-include "[:starting {:method")
