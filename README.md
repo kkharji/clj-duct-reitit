@@ -1,7 +1,10 @@
 # Duct module.reitit
 
 
-A [Duct][] module that sets [reitit][] as the application router with ring as a handler.
+A [Duct][] module that sets [reitit][] as the application router with ring as a
+handler. It provides two keys: `duct.reitit/router` an instance of
+`reitit.ring/router` and `duct.reitit/handler` which is an instance of
+`reitit.ring/ring-handler`
 
 [duct]: https://github.com/duct-framework/duct
 [reitit]: https://github.com/metosin/reitit
@@ -10,7 +13,7 @@ A [Duct][] module that sets [reitit][] as the application router with ring as a 
 
 To install, add the following to your project `:dependencies`:
 
-    [duct/module.reitit "0.1.0"]
+    [duct/module.reitit "0.3.0"]
 
 ## Usage
 

@@ -31,6 +31,44 @@ passed in `#duct.reitit/logging{:types []}`
 because logging shouldn't be done there.
   </details></dd></dl>
 
+### Module
+
+
+<dl><dd><details><summary><a href="https://github.com/tami5/clj-duct-reitit/commit/398ae33c103b14b8c255f6cd5024e9877dc3fdd3"><tt>398ae33</tt></a> ♻️ Refactor: Total rewrite and decoupling</summary><br />- rename main router function key to `duct.reitit/router` instead of
+  `duct.router/reitit`.
+- rename main handler function key to `duct.reitit/handler` instead of
+  `duct.handler/root`.
+- create separate initializer for `duct.reitit/routes`. It seems to go
+  along the lines of decoupling processing steps.
+- refactor `duct.module/reitit` and make more readable and easy to
+  reason with.
+- move default config along with development and production profile
+  mutations to `duct/reitit/defaults.clj`.
+- refactor reitit module initializer logic to somewhat general purpose
+  module initializer.
+
+  ~~~clojure
+  (module/init
+         {:root  :duct.reitit
+          :config config
+          :extra [(registry-tree registry)]
+          :store  {:namespaces namespaces :routes routes}
+          :schema {::registry (registry-references registry)
+                   ::routes   [:routes :namespaces ::registry]
+                   ::router   [::routes ::options ::log]
+                   ::log      ::options
+                   ::handler  [::router ::options ::log]}})
+  ~~~
+  This make create modules similar duct.reitit easier.
+  TODO: move to external library.
+- change tests to reflect new changes
+- remove many redundant files.
+  </details></dd></dl>
+
+### Readme
+
+
+- <a href="https://github.com/tami5/clj-duct-reitit/commit/6b2ce558004fee874be826adae9c405fc859b81f"><tt>6b2ce55</tt></a> 📚 Documentation: Update
 ### Tests
 
 
