@@ -1,0 +1,16 @@
+version: '3'
+
+# 1 service = 1 container. For example, a service, a server, a client, a database...
+services:
+  database:
+    image: 'postgres:latest'
+    ports:
+      - 5432:5432
+    # volumes:
+    #   - type: bind
+    #     source: ./resources/db/sql/
+    #     target: /docker-entrypoint-initdb.d
+    environment:
+      POSTGRES_DB: tami           # Main Database
+      POSTGRES_USER: postgres     # The PostgreSQL user (useful to connect to the database)
+      POSTGRES_PASSWORD: password # The PostgreSQL password (useful to connect to the database)
