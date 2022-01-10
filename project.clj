@@ -22,6 +22,7 @@
                              [io.aviso/pretty "1.0"]]}}
   :plugins [[cider/cider-nrepl      "0.27.3"]
             [lein-shell             "0.5.0"]
-            [io.aviso/pretty        "1.0"]]
+            [io.aviso/pretty        "1.0"]
+            [lein-annotations "0.2.0"]]
 
   :aliases {"update-changelog" ["shell" "./bin/update-changelog"]})
