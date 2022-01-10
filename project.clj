@@ -1,4 +1,4 @@
-(defproject duct/module.reitit "0.2.0"
+(defproject duct/module.reitit "0.3.1-SNAPSHOT"
   :description "Duct module and router for the reitit routing library"
   :url "https://github.com/tami5/clj-duct-reitit"
   :license {:name "Eclipse Public License"
