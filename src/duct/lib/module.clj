@@ -21,7 +21,7 @@
   (let [root (if (keyword? root) (name root) root)]
     (reduce-kv
      (fn [m k v]
-       (if (into-options? root k schema-keys)
+       (if (and (keyword? k) (into-options? root k schema-keys))
          (assoc-in m [(keyword root "options") (unqualify k)] v)
          (assoc m k v)))
      {} config)))
