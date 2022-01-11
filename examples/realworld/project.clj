@@ -5,7 +5,7 @@
   :dependencies [[org.clojure/clojure "1.10.0"]
                  [org.clojure/core.async "1.5.648"]
                  [duct/module.sql "0.6.1"]
-                 [duct/module.reitit "0.3.1-SNAPSHOT"]
+                 [duct/module.reitit "0.3.1"]
                  [duct/middleware.buddy "0.2.0"]
                  [buddy/buddy-hashers "1.8.1"]
                  [metosin/malli "0.7.5"]]

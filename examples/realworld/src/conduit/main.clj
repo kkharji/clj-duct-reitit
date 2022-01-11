@@ -1,7 +1,6 @@
 (ns conduit.main
   (:gen-class)
-  (:require [duct.core :as duct]
-            [duct.reitit])) ;; TODO: fixme
+  (:require [duct.core :as duct]))
 
 (duct/load-hierarchy)
 
