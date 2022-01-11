@@ -13,7 +13,7 @@ handler. It provides two keys: `duct.reitit/router` an instance of
 
 To install, add the following to your project `:dependencies`:
 
-    [duct/module.reitit "0.3.0"]
+    [duct/module.reitit "0.3.1"]
 
 ## Usage
 
