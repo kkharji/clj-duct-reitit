@@ -1,112 +1,100 @@
 (ns conduit.spec
   "Namespace to register and validate request/response based on
   https://github.com/gothinkster/realworld/blob/main/api/openapi.yml
-  Using clojure.spec"
-  (:require [clojure.spec.alpha :as s]))
+  Using malli"
+  (:require [malli.core :as m]
+            [malli.registry :as mr]
+            [malli.util :as mu]
+            [conduit.spec.util :refer [schemas-from-feilds optional-keys closed-schema]]
+            [duct.reitit.util :refer [spy]]))
 
-;; User Resource, Request and Response.
-(s/def :user/username string?)
-(s/def :user/email string?)
-(s/def :user/password string?)
-(s/def :user/bio string?)
-(s/def :user/token string?)
-(s/def :user/image string?)
+(def ^:private fields
+  {;; User Schema
+   :user/username            :string
+   :user/email               :string
+   :user/password            :string
+   :user/bio                 :string
+   :user/token               :string
+   :user/image               :string
 
-(s/def ::user
-  (s/keys :req-un
-          [:user/email
-           :user/bio
-           :user/password
-           :user/username
-           :user/image
-           :user/token]))
+   ;; Profile Schema
+   :profile/bio              :user/bio
+   :profile/following        :boolean
+   :profile/username         :user/username
+   :profile/image            :user/image
 
-(s/def :user/login
-  (s/keys :req-un [:user/email :user/password]))
+   ;; Article Schema
+   :article/slug             :string
+   :article/title            :string
+   :article/description      :string
+   :article/body             :string
+   :article/author           :schema/profile
+   :article/tag-list         [:vector :string]
+   :article/created-at       :string
+   :article/updated-at       :string
+   :article/favorited        :boolean
+   :article/favorites-count  :int
 
-(s/def :user/new
-  (s/keys :req-un [:user/email :user/password :user/username]))
+   ;; Comment Schema
+   :comment/id               :int
+   :comment/author           :schema/profile
+   :comment/body             :string
+   :comment/created-at       :string
+   :comment/updated-at       :string})
 
-#_(s/valid? :user/new   {:username "tami" :email "tami@gmail.com" :password "12345567"})
-#_(s/valid? :user/login {:email "tami@gmail.com" :password "12345567"})
-#_(s/valid? ::user      {:username "" :email "tami@gmail.com" :password "12345567" :image "" :token ""})
+(def ^:private schema
+  (let [{:keys [comment article profile user]} (schemas-from-feilds fields)]
+    {:schema/user    (-> user    optional-keys closed-schema)
+     :schema/comment (-> comment optional-keys closed-schema)
+     :schema/article (-> article optional-keys closed-schema)
+     :schema/profile (-> profile optional-keys closed-schema)}))
 
-;; Profile Resource, Request and Response.
-(s/def :profile/bio :user/bio)
-(s/def :profile/following boolean?)
-(s/def :profile/username :user/username)
-(s/def :profile/image :user/image)
-(s/def ::profile
-  (s/keys :req-un [:profile/bio :profile/following :profile/username :profile/image]))
+(def ^:private actions
+  {:actions.user/update :schema/user
+   :actions.user/login    [:map
+                           [:email :user/email]
+                           [:password :user/password]]
+   :actions.user/register [:map
+                           [:email :user/email]
+                           [:username :user/username]
+                           [:password :user/password]]
+   :actions.article/create [:map
+                            [:body :article/body]
+                            [:description :article/description]
+                            [:title :article/title]
+                            [:tag-list {:optional true} :article/tag-list]]
+   :actions.article/update [:map
+                            [:title {:optional true} :article/title]
+                            [:body {:optional true} :article/body]
+                            [:description {:optional true} :article/description]]})
 
-;; Article Resource, Request and Response.
-(s/def :article/slug string?)
-(s/def :article/title string?)
-(s/def :article/description string?)
-(s/def :article/body string?)
-(s/def :article/author ::profile)
-(s/def :article/tag-list (s/coll-of string? :kind vector))
-(s/def :article/created-at string?)
-(s/def :article/updated-at string?)
-(s/def :article/favorited boolean?)
-(s/def :article/favorites-count int?)
-(s/def ::article
-  (s/keys :req-un [:article/slug
-                   :article/title
-                   :article/description
-                   :article/body
-                   :article/author
-                   :article/tag-list
-                   :article/created-at
-                   :article/updated-at
-                   :article/favorited
-                   :article/favorites-count]))
+(def ^:private requests
+  {:request.user/register   [:map [:user :actions.user/register]]
+   :request.user/update     [:map [:user :actions.user/update]]
+   :request.user/login      [:map [:user :actions.user/login]]
+   :request.article/create  [:map [:article :actions.article/create]]
+   :request.article/update  [:map [:article :actions.article/update]]})
 
-(s/def :articles/count int?)
+(def ^:private responses
+  {:response/article       [:map [:article :schema/article]]
+   :response/articles      [:map [:articles [:vec :schema/article] [:count :int]]]
+   :response/user          [:map [:user :schema/user]]
+   :response/comment       [:map [:comment :schema/comment]]
+   :response/comments      [:map [:articles [:vec :schema/comment]]]})
 
-(s/def :response/article
-  (s/keys :req-un [::article]))
+(mr/set-default-registry!
+ (merge (m/default-schemas) (mu/schemas) fields schema actions requests responses))
 
-(s/def ::articles
-  (s/coll-of ::article))
+(comment
+  (m/validate
+   :request.user/login
+   {:user {:email "tami5@gmail.com" :password "1234566"}})
 
-(s/def :article/new
-  (s/keys :req-un [:article/title :article/body :article/description]
-          :opt-un [:article/tag-list]))
+  (m/validate
+   :request.user/update
+   {:user {:email "tami5@gmail.com" :password "1234566"}})
 
-(s/def :article/update
-  (s/keys :opt-un [:article/title :article/description :article/body :article/tag-list]))
+  (not (m/validate
+        :request.user/update
+        {:user {:not-field "tami5@gmail.com" :password "1234566"}})))
 
-(s/def :response/article
-  (s/keys :req-un [::article]))
-
-(s/def :response/articles
-  (s/keys :req-un [::articles :articles/count]))
-
-(s/def :request/new-article :article/new)
-(s/def :request/new-article :article/update)
-
-;; Comment Resource, Request and Response.
-(s/def :comment/id int?)
-(s/def :comment/author ::profile)
-(s/def :comment/body string?)
-(s/def :comment/created-at string?)
-(s/def :comment/updated-at string?)
-
-(s/def ::comment
-  (s/keys :opt-un [:comment/id :comment/author :comment/body :comment/created-at :comment/updated-at]))
-
-(s/def ::comments
-  (s/coll-of ::comment))
-
-(s/def :response/comment
-  (s/keys :req-un [::comment]))
-
-(s/def :response/comments
-  (s/keys :req-un [::comments]))
-
-(s/def :comment/new
-  (s/keys :req-un [:comment/body]))
-
-(s/def :request/new-comment
-  (s/keys :req-un [:comment/body]))

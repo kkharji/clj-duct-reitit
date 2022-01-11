@@ -7,7 +7,8 @@
                  [duct/module.sql "0.6.1"]
                  [duct/module.reitit "0.3.1-SNAPSHOT"]
                  [duct/middleware.buddy "0.2.0"]
-                 [buddy/buddy-hashers "1.8.1"]]
+                 [buddy/buddy-hashers "1.8.1"]
+                 [metosin/malli "0.7.5"]]
 
   :profiles {:repl {:source-paths ["dev"]}
                     ;; :prep-tasks   ^:replace ["javac" "compile"]}

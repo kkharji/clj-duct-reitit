@@ -1,5 +1,5 @@
 {:duct.module/reitit {}
  :duct.profile/dev   {}
  :duct.profile/prod  {}
- :duct.module/logging {}
+ ; :duct.module/logging {}
  :duct.profile/base {:duct.core/project-ns conduit}}
