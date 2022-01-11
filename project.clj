@@ -1,4 +1,4 @@
-(defproject duct/module.reitit "0.2.0"
+(defproject duct/module.reitit "0.3.0-SNAPSHOT"
   :description "Duct module and router for the reitit routing library"
   :url "https://github.com/tami5/clj-duct-reitit"
   :license {:name "Eclipse Public License"
@@ -9,7 +9,8 @@
                  [metosin/ring-http-response "0.9.3"]
                  [duct/core           "0.7.0"]
                  [integrant           "0.7.0"]
-                 [medley              "1.0.0"]]
+                 [medley              "1.0.0"]
+                 [metosin/malli       "0.7.5"]]
   :profiles {:repl
              {:source-paths   ["dev/src"]
               :resource-paths ["dev/resources"]
