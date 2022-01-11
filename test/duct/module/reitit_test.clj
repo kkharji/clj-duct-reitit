@@ -1,8 +1,8 @@
-(ns duct.reitit-test
+(ns duct.module.reitit-test
   (:require [clojure.test :refer [are deftest is testing]]
             [duct.core :as core]
             [duct.module.logging]
-            [duct.reitit]
+            [duct.module.reitit]
             [foo.handler]
             [foo.handler.plus]
             [integrant.core :as ig]
