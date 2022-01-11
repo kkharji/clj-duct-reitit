@@ -1,4 +1,6 @@
-(ns conduit.spec.util)
+(ns conduit.spec.util
+  (:require [malli.registry :as mr]
+            [malli.core :as m]))
 
 (defn- inherit-to-type
   "Take a map of keys and spec and returns malli schema
@@ -33,3 +35,7 @@
   keys are valid. Return the closed malli map "
   [m]
   (vec (concat [(first m)] [{:closed true}] (rest m))))
+
+(defn set-malli-registry! [& additions]
+  (mr/set-default-registry!
+   (apply merge (cons (m/default-schemas) additions))))

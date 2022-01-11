@@ -11,4 +11,3 @@
         (duct/read-config)
         (duct/exec-config profiles keys))
     (System/exit 0)))
-
