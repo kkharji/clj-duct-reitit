@@ -1,11 +1,15 @@
-# 🔥 [Unreleased](https://github.com/tami5/clj-duct-reitit)
+# 🎉 [0.3.1](https://github.com/tami5/clj-duct-reitit/tree/0.3.1) - 2022-01-11
 
 
 ### Exceptions
 
 
-<dl><dd><details><summary><a href="https://github.com/tami5/clj-duct-reitit/commit/d5c2be889afce888534b503080bd8c26a706e5a1"><tt>d5c2be8</tt></a> ✨ Feature: Auto-detect user exceptions handler</summary><br />When user defined `project-ns.handler/exceptions` or
+<dl><dd><details><summary><a href="https://github.com/tami5/clj-duct-reitit/commit/2a8c6489f690b5d79d3e2c16d89e954b3d845d14"><tt>2a8c648</tt></a> ✨ Feature: Auto-detect user exceptions handler</summary><br />When user defined `project-ns.handler/exceptions` or
 `project.ns.handler.exceptions/main` it should auto-detected and set it
+  </details></dd></dl>
+
+<dl><dd><details><summary><a href="https://github.com/tami5/clj-duct-reitit/commit/6535c96c387d79109cad7d361aa879efd155c2f6"><tt>6535c96</tt></a> ✨ Feature: Append pretty message to coercion by default.</summary><br />When coercer is defined this should be appended by default. Although,
+support is needed for schema and malli errors.
   </details></dd></dl>
 
 ### Logging
@@ -42,6 +46,15 @@ Compact Mode:
 ~~~
   </details></dd></dl>
 
+- <a href="https://github.com/tami5/clj-duct-reitit/commit/dda73785a07e12545ccf5275b8bb6f8e2d9bf15a"><tt>dda7378</tt></a> ✨ Feature: Malli compact and pretty format
+### Middleware
+
+
+- <a href="https://github.com/tami5/clj-duct-reitit/commit/80f65a72b0881124e50289efac088d57d8d40ea4"><tt>80f65a7</tt></a> ✨ Feature: Cross-origin support
+### Module
+
+
+- <a href="https://github.com/tami5/clj-duct-reitit/commit/528820c207b0888aecd5f3122b3275ff81c10228"><tt>528820c</tt></a> 🐛 Fix: Implicit require of duct.reitit
 
 
 # 🎉 [0.3.0](https://github.com/tami5/clj-duct-reitit/tree/0.3.0) - 2022-01-09
