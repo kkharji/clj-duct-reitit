@@ -2,23 +2,29 @@
   (:require [clojure.string :as str]
             [duct.reitit.request :as request]
             [expound.alpha :as expound]
-            [duct.reitit.util :refer [spy]]))
+            [duct.reitit.util :refer [spy]]
+            [reitit.coercion :refer [-get-name] :rename {-get-name spec-type}]
+            [duct.reitit.format.spec :as format.spec]
+            [duct.reitit.format.malli :as format.malli]))
 
 (defn spec-print [{:keys [pre problems print-spec?]}]
   (let [cfg {:theme :figwheel-theme :print-specs? print-spec?}
         -print (expound/custom-printer (if pre (assoc cfg :value-str-fn pre) cfg))]
     (-print problems)))
 
-(defn coercion-pretty [problems print-spec? request-info]
-  (with-out-str
-    (spec-print
-     {:problems problems
-      :print-spec? print-spec?
-      :pre (fn [_name form path _value]
-             (let [message (str (pr-str form) "\n\n" "Path: " (pr-str path))]
-               (if request-info
-                 (str request-info "\n\n" message)
-                 message)))})))
+(defmulti coercion
+  (fn [data _request-info _opts]
+    (-> data :coercion spec-type)))
+
+(defmethod coercion :spec [data {:keys [pretty? print-spec?]} request-info]
+  (if pretty?
+    (format.spec/pretty data print-spec? request-info)
+    (format.spec/compact data request-info)))
+
+(defmethod coercion :malli [data {:keys [pretty?]} request-info]
+  (if pretty?
+    (format.malli/pretty data request-info)
+    (format.malli/compact data request-info)))
 
 (defn exception-pretty [req-info ex-trace ex-cause ex-message]
   (let [header "-- Exception Thrown ----------------"
@@ -44,28 +50,3 @@
        (map #(str (.getFileName %) ":" (.getLineNumber %)))
        (take 5)
        (str/join " => ")))
-
-(defn- wrap-with [title length content]
-  (let [header (str title " " (apply str (repeat length "-")))
-        footer (apply str (repeat (count header) "-"))]
-    (str header "\n\n"
-         content
-         "\n\n" footer "\n")))
-
-(defn ^:private current-time []
-  (-> "hh:mm:ss"
-      (java.text.SimpleDateFormat.)
-      (.format (java.util.Date.))))
-
-(defn request-starting [request pretty?]
-  (let [req-info (request/info request pretty? [:request-method :uri :params])]
-    (if-not pretty?
-      [:starting req-info]
-      (wrap-with "Starting Request" 24 (str "Request Time: " (current-time) "\n" req-info)))))
-
-(defn request-completed [request pretty?]
-  (let [ms (- (System/currentTimeMillis) (:start-ms request))
-        req-info (request/info request pretty? [:request-method :uri])]
-    (if-not pretty?
-      [:completed (assoc req-info :completed-in ms)]
-      (wrap-with "Finishing Request" 24 (str req-info "\n" "Request Duration: " ms " ms")))))

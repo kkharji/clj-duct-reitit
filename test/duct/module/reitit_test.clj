@@ -1,7 +1,8 @@
-(ns duct.reitit-test
+(ns duct.module.reitit-test
   (:require [clojure.test :refer [are deftest is testing]]
             [duct.core :as core]
-            [duct.reitit]
+            [duct.module.logging]
+            [duct.module.reitit]
             [foo.handler]
             [foo.handler.plus]
             [integrant.core :as ig]
@@ -186,9 +187,7 @@
 (defn does-include [ptr]
   (fn [str] (str/includes? str ptr)))
 
-(def spec-pretty?  (does-include "-- Spec failed --------------------"))
-(def spec-compact? (does-include "-- Spec failed --------------------"))
-(def ex-pretty?    (does-include "-- Exception Thrown ----------------"))
+(def ex-pretty?    (does-include "-- Exception Thrown "))
 (def ex-compact?   (does-include "Exception: :uri"))
 (defn cmerge [b e] (core/merge-configs b e))
 
@@ -208,10 +207,13 @@
       ;; Disabled through disabling
       empty? {:duct.reitit/logging {:exceptions? false}})))
 
-(deftest test-coercion-logging
+(deftest test-coercion-logging-spec
   (let [base {:duct.reitit/coercion {:enable true :coercer 'spec}
               :duct.reitit/logging  {:enable true :pretty? false :coercions? true}}
-        req-opts [:get "/plus" {:query-params {:y "str" :x 0}}]]
+        req-opts [:get "/plus" {:query-params {:y "str" :x 0}}]
+        spec-pretty?  (does-include "-- Spec failed")
+        spec-compact? (does-include "Spec Coercion Error")]
+
     (are [testfn cfg] (req-with-cfg {:req-opts req-opts :config (cmerge base cfg) :testfn testfn :with-str? true})
       ;; Enabled
       spec-compact? {}
@@ -223,6 +225,31 @@
       empty? {:duct.reitit/logging {:enable false}}
       ;; Disabled Coercion Logging, loggs with exceptions handler instead
       ex-pretty? {:duct.reitit/logging {:pretty? true :exceptions? true :coercions? false}})))
+
+(deftest test-coercion-logging-malli
+  (let [req-opts [:get "/plus" {:query-params {:y "str"}}]
+        handler {:parameters {:query [:map [:x :int] [:y :int]]}
+                 :handler (fn [{{{:keys [x y]} :query} :parameters}]
+                            {:status 200 :body {:total (+ x y)}})}
+        base {:duct.reitit/coercion {:enable true :coercer 'malli}
+              :duct.reitit/logging  {:enable true :pretty? false :coercions? true}
+              :duct.reitit/routes   [["/plus" {:get handler}]]}
+        malli-pretty?   (does-include "2 Errors detected:")
+        malli-compact?  (does-include "Malli Coercion Error")]
+
+    (are [testfn cfg] (req-with-cfg {:req-opts req-opts :config (cmerge base cfg) :testfn testfn :with-str? true})
+      ;; Enabled
+      malli-compact? {}
+      ;; Enabled + logger (cant' check or confirm that)
+      empty? {:duct.reitit/logging {:logger (ig/ref :duct/logger)}}
+      ;; Enabled + Pretty
+      malli-pretty? {:duct.reitit/logging {:pretty? true}}
+      ;; Disabled Logging
+      empty? {:duct.reitit/logging {:enable false}}
+      ;; Disabled Coercion Logging, loggs with exceptions handler instead
+      ex-pretty? {:duct.reitit/logging {:pretty? true :exceptions? true :coercions? false}})
+
+    (req-with-cfg {:req-opts req-opts :config base})))
 
 (deftest test-request-logging
   (let [base {:duct.reitit/logging

@@ -2,8 +2,8 @@
   (:require [duct.reitit.format :as format]
             [duct.reitit.middleware.coercion :as coercion]
             [duct.reitit.request :as request]
-            [reitit.coercion :refer [-get-name] :rename {-get-name spec-type}]
-            [reitit.ring.middleware.exception :as exception :refer [create-exception-middleware default-handlers]]))
+            [reitit.ring.middleware.exception :as exception :refer [create-exception-middleware default-handlers]]
+            [duct.reitit.util :refer [spy]]))
 
 (defn coercion-ex? [type]
   (or (= :reitit.coercion/request-coercion  type)
@@ -11,20 +11,17 @@
 
 (defmulti ex-format
   (fn [exception _request {:keys [coercions?]}]
-    (let [data (ex-data exception)
-          kind (if (and coercions? (coercion-ex? (:type data))) :coercion :exception)
-          type (when (= :coercion kind) (-> data :coercion spec-type))]
-      [kind type])))
+    (let [{:keys [type]} (ex-data exception)]
+      (if (and coercions? (coercion-ex? type))
+        :coercion :exception))))
 
-(defmethod ex-format [:coercion :spec]
-  [exception request {:keys [pretty? with-req-info? print-spec? coercions?]}]
+(defmethod ex-format :coercion [exception request {:keys [pretty? with-req-info? coercions?] :as opts}]
   (when coercions?
-    (let [problems (:problems (ex-data exception))
+    (let [data (ex-data exception)
           request-info (when with-req-info? (request/info request pretty?))]
-      (format/coercion-pretty problems print-spec? request-info))))
+      (format/coercion data opts request-info))))
 
-(defmethod ex-format [:exception nil]
-  [exception request {:keys [pretty? with-req-info? exceptions?]}]
+(defmethod ex-format :exception [exception request {:keys [pretty? with-req-info? exceptions?]}]
   (when exceptions?
     (let [req-info   (when with-req-info? (request/info request pretty?))
           ex-trace   (format/trace-compact exception)
