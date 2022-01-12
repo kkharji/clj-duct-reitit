@@ -1,5 +1,15 @@
 {:duct.module/reitit  {}
- :duct.profile/dev    {}
- :duct.profile/prod   {}
+ :duct.module/sql     {}
  :duct.module/logging {}
- :duct.profile/base   {:duct.core/project-ns conduit}}
+ :duct.profile/base {:duct.core/project-ns conduit
+                     :duct.migrator.ragtime/resources {:path "conduit/migrations"}
+                     :duct.migrator/ragtime {:migrations #ig/ref :duct.migrator.ragtime/resources
+                                             :logger #ig/ref :duct/logger
+                                             :strategy :rebase}}
+ :duct.profile/dev {:duct.database.sql/hikaricp
+                    {:jdbc-url "jdbc:postgresql://localhost/postgres?user=postgres&password=password" :logger #ig/ref :duct/logger}
+                    :duct.logger/timbre
+                    {:level :info :appenders {:duct.logger.timbre/brief #ig/ref :duct.logger.timbre/brief}}
+                    :duct.logger.timbre/brief {}}
+ :duct.profile/prod   {}}
+
