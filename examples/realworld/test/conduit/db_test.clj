@@ -6,7 +6,7 @@
 
 (use-fixtures :once with-system)
 
-(deftest register
+(deftest users
   (let [user {:username "tami5"
               :email "example@mail.com"
               :password "123456789"
@@ -32,13 +32,7 @@
         (testing "Exception Message"
           (is (string/includes? (ex-message same-email-and-useranme) "users_email_key"))
           (is (string/includes? (ex-message same-email) "users_email_key"))
-          (is (string/includes? (ex-message same-username) "users_username_key")))))))
+          (is (string/includes? (ex-message same-username) "users_username_key")))))
 
-(deftest login
-  (let [user {:username "tami5"
-              :email "example@mail.com"
-              :password "123456789"
-              :bio "Building spaceships"
-              :image "/api/assets/users/tami5.png"}]
     (testing "Correct Login Information"
       (is (map? (user/login *database* user))))))

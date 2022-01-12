@@ -3,7 +3,7 @@
             [potemkin :as p]))
 
 (p/import-vars
- [d start pause resume stop restart watch system config go  halt  reset  reset-all])
+ [d start pause suspend resume stop restart watch system config go  halt  reset  reset-all])
 (d/init
  {;; By default only watch and namespace reload and refresh works
   ;; Paths to target for refresh & tests
