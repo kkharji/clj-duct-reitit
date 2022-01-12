@@ -6,7 +6,8 @@
                  [org.clojure/core.async "1.5.648"]
 
                  ;; Database
-                 [duct/module.sql "0.6.1" :exceptions [hikari-cp]]
+                 [duct/module.sql "0.6.1" :exceptions [hikari-cp duct/database.sql.hikaricp]]
+                 [duct/database.sql.hikaricp "0.4.1-SNAPTSHOT"]
                  [hikari-cp "2.13.0"]
                  [org.postgresql/postgresql "42.3.1"]
                  [com.github.seancorfield/next.jdbc "1.2.761"]
