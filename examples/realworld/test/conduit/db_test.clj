@@ -35,4 +35,8 @@
           (is (string/includes? (ex-message same-username) "users_username_key")))))
 
     (testing "Correct Login Information"
-      (is (map? (user/login *database* user))))))
+      (is (map? (user/login *database* user))))
+
+    (testing "Incorrect Login Information"
+      (is (nil? (user/login *database* (assoc user :password "bbb"))))
+      (is (nil? (user/login *database* (assoc user :email "xxx@fam.com")))))))
