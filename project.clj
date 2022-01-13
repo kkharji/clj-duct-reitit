@@ -1,4 +1,4 @@
-(defproject duct/module.reitit "0.3.1"
+(defproject duct/module.reitit "0.3.1-SNAPSHOT"
   :description "Duct module and router for the reitit routing library"
   :url "https://github.com/tami5/clj-duct-reitit"
   :license {:name "Eclipse Public License"
@@ -6,8 +6,8 @@
   :dependencies [[org.clojure/clojure "1.10.0"]
                  [ring-cors           "0.1.13"]
                  [metosin/reitit      "0.5.15"]
-                 [metosin/ring-http-response "0.9.3"]
                  [duct/core           "0.7.0"]
+                 [duct/logger         "0.3.0"]
                  [integrant           "0.7.0"]
                  [medley              "1.0.0"]
                  [metosin/malli       "0.7.5"]]

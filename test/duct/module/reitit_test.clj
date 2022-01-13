@@ -254,7 +254,7 @@
 (deftest test-request-logging
   (let [base {:duct.reitit/logging
               {:exceptions? false :coercions? false :requests? true :level :report}}
-        data-format    (does-include "[:starting {:method")
+        data-format    (does-include ":reitit.request/handling")
         pretty-format? (does-include "Starting Request")
 
         req-opts [:get "/divide" {:body-params {:y 2 :x 2}}]]

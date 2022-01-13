@@ -68,14 +68,15 @@
       (.format (java.util.Date.))))
 
 (defn request-starting [request pretty?]
-  (let [req-info (info request pretty? [:request-method :uri :params])]
+  (let [{:keys [uri params]} (info request pretty?)]
     (if-not pretty?
-      [:starting req-info]
-      (wrap-with "Starting Request" 24 (str "Request Time: " (current-time) "\n" req-info)))))
+      (str :reitit.request/handling " " (pr-str [(:request-method request) uri]) "\n"
+           :reitit.request/handling " " (pr-str [:params params]))
+      (wrap-with "Starting Request" 24 (str "Request Time: " (current-time) "\n")))))
 
 (defn request-completed [request pretty?]
-  (let [ms (- (System/currentTimeMillis) (:start-ms request))
+  (let [ms (str (- (System/currentTimeMillis) (:start-ms request)) " ms")
         req-info (info request pretty? [:request-method :uri])]
     (if-not pretty?
-      [:completed (assoc req-info :completed-in ms)]
+      (str :reitit.request/handling " " (pr-str [:duration ms]) "\n")
       (wrap-with "Finishing Request" 24 (str req-info "\n" "Request Duration: " ms " ms")))))
