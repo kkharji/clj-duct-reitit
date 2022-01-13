@@ -1,15 +1,55 @@
-{:duct.module/reitit  {}
+{; Modules (Configuration Transformers :D)
+ :duct.module/reitit  {}
  :duct.module/sql     {}
  :duct.module/logging {}
- :duct.profile/base {:duct.core/project-ns conduit
-                     :duct.migrator.ragtime/resources {:path "conduit/migrations"}
-                     :duct.migrator/ragtime {:migrations #ig/ref :duct.migrator.ragtime/resources
-                                             :logger #ig/ref :duct/logger
-                                             :strategy :rebase}}
- :duct.profile/dev {:duct.database.sql/hikaricp
-                    {:jdbc-url "jdbc:postgresql://localhost/postgres?user=postgres&password=password" :logger #ig/ref :duct/logger}
-                    :duct.logger/timbre
-                    {:level :info :appenders {:duct.logger.timbre/brief #ig/ref :duct.logger.timbre/brief}}
-                    :duct.logger.timbre/brief {}}
+
+ ; Base System Configuration
+ :duct.profile/base
+ {:duct.core/project-ns conduit
+
+  :duct.reitit/routes
+  [["/api/users"
+    {:post {:handler  user/register
+            :parameters {:body :request.user/register}}}]
+
+   ["/api/users/login"
+    {:post {:handler  user/login
+            :parameters {:body :request.user/login}}}]]
+
+  :duct.reitit/environment
+  {:db #ig/ref :duct.database.sql/hikaricp
+   :jwt-secret "SECRET:D"}
+
+  :duct.reitit/coercion {:enable true :coercer malli}
+  :duct.reitit/muuntaja  false
+
+  :duct.migrator/ragtime
+  {:migrations #ig/ref :duct.migrator.ragtime/resources
+   :logger #ig/ref :duct/logger}
+
+  :duct.migrator.ragtime/resources
+  {:path "conduit/migrations"}}
+
+ ; Development Environment Changes
+ :duct.profile/dev
+ {:duct.database.sql/hikaricp
+  {:jdbc-url "jdbc:postgresql://localhost/postgres?user=postgres&password=password"
+   :logger #ig/ref :duct/logger}
+  :duct.logger/timbre
+  {:level :info
+   :appenders {:duct.logger.timbre/brief #ig/ref :duct.logger.timbre/brief}}
+
+  :duct.reitit/logging
+  {:level :report
+   :enable true
+   :logger #ig/ref :duct/logger
+   :exceptions? true
+   :pretty? false
+   :coercions? false
+   :requests? true}
+
+  :duct.logger.timbre/brief {}}
+
+  ; Production Environment Changes
  :duct.profile/prod   {}}
 

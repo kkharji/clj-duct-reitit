@@ -7,18 +7,19 @@
 
 (def ^:dynamic *database* nil)
 (def ^:dynamic *system* nil)
+(def ^:dynamic *ring-handler* nil)
 
 (defn with-system [f]
   (duct.core/load-hierarchy)
   (let [system (-> (io/resource "conduit/config.edn")
                    (duct/read-config)
-                   (dissoc :duct.module/reitit)
                    (duct/prep-config [:duct.profile/dev :duct.profile/test])
                    (ig/init))
         spec    (:duct.database.sql/hikaricp system)
+        ring-handler (:duct.reitit/handler system)
         ragtime {:datastore (-> (:spec spec) (ragtime.jdbc/sql-database))
                  :migrations (:duct.migrator.ragtime/resources system)}]
-    (binding [*database* spec *system* system]
+    (binding [*database* spec *system* system *ring-handler* ring-handler]
       (ragtime.repl/migrate ragtime)
       (f)
       (ragtime.repl/rollback ragtime)
