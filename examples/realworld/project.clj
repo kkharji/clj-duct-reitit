@@ -19,7 +19,7 @@
                  [org.slf4j/slf4j-log4j12 "1.7.1"]
                  [com.taoensso/timbre "5.1.2"]
 
-                 [duct/module.reitit "0.3.1"]
+                 [duct/module.reitit "0.3.1-SNAPSHOT"]
                  [duct/middleware.buddy "0.2.0"]
                  [buddy/buddy-hashers "1.8.1"]
                  [metosin/malli "0.7.5"]]
