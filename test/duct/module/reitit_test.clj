@@ -255,7 +255,7 @@
   (let [base {:duct.reitit/logging
               {:exceptions? false :coercions? false :requests? true :level :report}}
         data-format    (does-include ":reitit.request/handling")
-        pretty-format? (does-include "Starting Request")
+        pretty-format? (does-include ":reitit.request/handling")
 
         req-opts [:get "/divide" {:body-params {:y 2 :x 2}}]]
 
