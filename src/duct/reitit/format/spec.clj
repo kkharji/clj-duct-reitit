@@ -7,7 +7,7 @@
         -print (expound/custom-printer (if pre (assoc cfg :value-str-fn pre) cfg))]
     (-print problems)))
 
-(defn pretty [data print-spec? request-info]
+(defn pretty [data {:keys [print-spec? request-info]}]
   (with-out-str
     (spec-print
      {:problems (:problems data)
@@ -18,7 +18,7 @@
                  (str request-info "\n\n" message)
                  message)))})))
 
-(defn compact [data request-info]
+(defn compact [data {:keys [request-info]}]
   (let [errors (->> data :problems ::s/problems (mapv #(if (empty? (:path %))
                                                          (select-keys % [:pred])
                                                          (select-keys % [:path :pred]))))

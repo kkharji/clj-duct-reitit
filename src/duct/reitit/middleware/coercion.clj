@@ -2,12 +2,15 @@
   (:require   [reitit.ring.coercion :as rcc]
               [reitit.ring.middleware.exception :as exception]
               [reitit.coercion :as coercion]
-              [duct.reitit.format :as format]))
+              [duct.reitit.format :as format]
+              [clojure.string :as str]))
 
 (defn get-coercion-exception-handler [status]
   (let [handler (exception/create-coercion-handler status)]
     (fn [ex req]
-      (let [msg (format/coercion (ex-data ex) {:print-spec? true :pretty? true} nil)]
+      (let [msg (-> (ex-data ex)
+                    (format/coercion {:print-spec? true :pretty? true :without-trace? true} nil)
+                    (str/replace #"\u001b\[[0-9;]*[mK]" ""))]
         (assoc-in (handler ex req) [:body :message] msg)))))
 
 (defn get-exception-handler

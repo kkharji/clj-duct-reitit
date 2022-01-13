@@ -1,14 +1,14 @@
 (ns duct.reitit.format.malli
   (:require [clojure.string :as str]
-            [malli.dev.pretty :as pretty]
+            [malli.dev.pretty :as pretty :refer [-block -printer]]
             [malli.dev.virhe :as v]
             [malli.error :as me]))
 
-(def ^:private reporter
-  (pretty/reporter (pretty/-printer {:title "Malli Coercion Error" :width 80})))
+(def printer
+  (-printer {:title "Malli Coercion Error" :width 80}))
 
-(defn format-errors [data printer]
-  (->> (for [e (-> data me/with-error-messages :errors)]
+(defn pretty-errors [errors printer]
+  (->> (for [e errors]
          [:align 2
           (v/-text "Message: " printer) (v/-color :string (str/capitalize (:message e)) printer) :break
           (v/-text "Path: " printer) (v/-visit (:path e) printer) :break
@@ -17,16 +17,24 @@
        (interpose :break)
        (interpose :break)))
 
-(defmethod v/-format ::default [_ _ {:keys [errors value extra] :as data} printer]
-  {:body [:group
-          (when extra [:group extra :break :break])
-          (v/-text "Value: " printer) (v/-visit value printer) :break :break
-          (pretty/-block (str (count errors) " Errors detected:") (format-errors data printer) printer)]})
+(defn pretty [{:keys [value] :as data}
+              {:keys [without-trace? request-info]}]
+  (let [m-errors  (-> data me/with-error-messages :errors)
+        err-info  (ex-info "Malli Error" {:type type :data data}) ;; not sure why this makes sense?
+        err-count (count m-errors)
+        err-title (str err-count " " (if (= 1 err-count) "Error" "Errors")  " detected:")
+        sec-trace (when-not without-trace? (v/-location err-info (:throwing-fn-top-level-ns-names printer)))
+        sec-body  [:group
+                   (when-let [r request-info] [:group r :break :break])
+                   (v/-text "Value: " printer) (v/-visit value printer) :break :break
+                   (-block err-title (pretty-errors m-errors printer) printer)]]
 
-(defn pretty [data request-info]
-  (with-out-str (reporter ::default (assoc data :extra request-info))))
+    (-> (if without-trace? "Validation Error" (or (:title data) (:title printer)))
+        (v/-section sec-trace sec-body printer)
+        (v/-print-doc printer)
+        (with-out-str))))
 
-(defn compact [data request-info]
+(defn compact [data {:keys [request-info]}]
   (let [errors (->> (:errors (me/with-error-messages data)) (mapv #(select-keys % [:path :message])))
         message (format "Malli Coercion Error(%s): %s" (pr-str (:value data)) (pr-str errors))]
     (if request-info

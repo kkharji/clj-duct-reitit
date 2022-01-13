@@ -16,15 +16,17 @@
   (fn [data _request-info _opts]
     (-> data :coercion spec-type)))
 
-(defmethod coercion :spec [data {:keys [pretty? print-spec?]} request-info]
-  (if pretty?
-    (format.spec/pretty data print-spec? request-info)
-    (format.spec/compact data request-info)))
+(defmethod coercion :spec [data {:keys [pretty?] :as opts} request-info]
+  (let [opts (assoc opts :request-info request-info)]
+    (if pretty?
+      (format.spec/pretty data opts)
+      (format.spec/compact data opts))))
 
-(defmethod coercion :malli [data {:keys [pretty?]} request-info]
-  (if pretty?
-    (format.malli/pretty data request-info)
-    (format.malli/compact data request-info)))
+(defmethod coercion :malli [data {:keys [pretty?] :as opts} request-info]
+  (let [opts (assoc opts :request-info request-info)]
+    (if pretty?
+      (format.malli/pretty data opts)
+      (format.malli/compact data opts))))
 
 (defn exception-pretty [req-info ex-trace ex-cause ex-message]
   (let [header "-- Exception Thrown ----------------"
