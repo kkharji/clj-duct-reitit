@@ -144,7 +144,7 @@
         handler (:duct.reitit/handler system)]
     (is (-> {:request-method :get :uri "/plus" :query-params {:y "str" :x 5}}
             (handler)
-            (:message)
+            (get-in [:body :message])
             (str/includes? "-- Spec failed")))))
 
 (deftest test-cors-middleware

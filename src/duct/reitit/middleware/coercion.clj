@@ -8,7 +8,7 @@
   (let [handler (exception/create-coercion-handler status)]
     (fn [ex req]
       (let [msg (format/coercion (ex-data ex) {:print-spec? true :pretty? true} nil)]
-        (into (handler ex req) {:message msg})))))
+        (assoc-in (handler ex req) [:body :message] msg)))))
 
 (defn get-exception-handler
   [{:keys [with-formatted-message?] :as _coercion}]
